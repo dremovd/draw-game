@@ -202,12 +202,12 @@ A cozy library in a treehouse during a gentle rain</textarea>
         let generationTimestamp = '';
 
         // --- Helper Functions ---
-        const sanitizeFilename = (name) => {
-            if (!name) return 'untitled';
+        const sanitizeForFilename = (name, maxLength = 50) => {
+            if (!name) return '';
             return name
                 .trim()
                 .toLowerCase()
-                .substring(0, 50)
+                .substring(0, maxLength)
                 .replace(/\s+/g, '_')
                 .replace(/[^\w.-]/g, '');
         };
@@ -239,7 +239,6 @@ A cozy library in a treehouse during a gentle rain</textarea>
             
             const imageContainer = document.createElement('div');
             imageContainer.className = 'w-full bg-gray-700 flex items-center justify-center';
-            // Dynamically set the aspect ratio of the container
             imageContainer.style.aspectRatio = aspectRatio.replace(':', ' / ');
 
             if (error) {
@@ -319,7 +318,11 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 const fullPrompt = [prefix, currentPrompt, suffix].filter(Boolean).join(' ');
                 const progressPercentage = ((i + 1) / prompts.length) * 100;
                 updateProgress(`Generating ${i + 1} of ${prompts.length}: "${currentPrompt.substring(0, 30)}..."`, progressPercentage);
-                const baseFilename = `${String(i + 1).padStart(3, '0')}-${sanitizeFilename(fullPrompt)}`;
+
+                const sanitizedPrompt = sanitizeForFilename(currentPrompt, 30);
+                const sanitizedPrefix = sanitizeForFilename(prefix, 15);
+                const sanitizedSuffix = sanitizeForFilename(suffix, 15);
+                const baseFilename = [String(i + 1).padStart(3, '0'), sanitizedPrompt, sanitizedPrefix, sanitizedSuffix].filter(Boolean).join('_');
                 
                 try {
                     let body;
@@ -398,10 +401,35 @@ A cozy library in a treehouse during a gentle rain</textarea>
             if (generatedImages.length === 0) return;
 
             const zip = new JSZip();
+            
+            // Add images to the zip
             generatedImages.forEach(img => {
                 zip.file(img.filename, img.base64Data, { base64: true });
             });
 
+            // Create and add the settings file
+            const selectedPresetKey = servicePresetEl.value;
+            const selectedOption = servicePresetEl.options[servicePresetEl.selectedIndex].text;
+            
+            let settingsContent = `Generation Settings (${new Date().toLocaleString()})\n`;
+            settingsContent += `==================================================\n\n`;
+            settingsContent += `Service: ${selectedOption}\n`;
+            settingsContent += `Timestamp: ${generationTimestamp}\n`;
+            settingsContent += `Prompt Prefix: ${promptPrefixEl.value}\n`;
+            settingsContent += `Prompt Suffix: ${promptSuffixEl.value}\n\n`;
+
+            if (selectedPresetKey === 'google-imagen3-apikey') {
+                settingsContent += `--- Imagen 3 Settings ---\n`;
+                settingsContent += `Aspect Ratio: ${aspectRatioEl.value}\n`;
+                settingsContent += `Number of Images Per Prompt: ${numberOfImagesEl.value}\n\n`;
+            }
+
+            settingsContent += `--- Full Prompts List ---\n`;
+            settingsContent += promptsEl.value;
+
+            zip.file('generation_settings.txt', settingsContent);
+
+            // Generate and download the zip file
             zip.generateAsync({ type: "blob" })
                 .then(function(content) {
                     const link = document.createElement('a');
@@ -424,5 +452,4 @@ A cozy library in a treehouse during a gentle rain</textarea>
     </script>
 </body>
 </html>
-
 

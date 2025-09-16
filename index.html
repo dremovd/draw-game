@@ -29,7 +29,7 @@
                 <!-- Prompts Section -->
                 <div>
                     <label for="prompts" class="block text-sm font-medium text-gray-300 mb-2">1. Enter Prompts (one per line)</label>
-                    <textarea id="prompts" rows="10" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-200 placeholder-gray-500" placeholder="A futuristic city at sunset&#10;A robot reading a book in a library&#10;A fantasy landscape with floating islands...">A smiling sloth in a business suit
+                    <textarea id="prompts" rows="8" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-200 placeholder-gray-500" placeholder="A futuristic city at sunset&#10;A robot reading a book in a library&#10;A fantasy landscape with floating islands...">A smiling sloth in a business suit
 A majestic jellyfish floating in a starry galaxy
 A cozy library in a treehouse during a gentle rain</textarea>
                 </div>
@@ -38,17 +38,58 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 <div>
                     <h2 class="text-lg font-semibold text-white mb-3">2. Service Configuration</h2>
                     <div class="space-y-4 bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="promptPrefix" class="block text-sm font-medium text-gray-300">Prompt Prefix</label>
+                                <input type="text" id="promptPrefix" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="e.g., photo of">
+                            </div>
+                            <div>
+                                <label for="promptSuffix" class="block text-sm font-medium text-gray-300">Prompt Suffix</label>
+                                <input type="text" id="promptSuffix" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="e.g., 4k, detailed">
+                            </div>
+                        </div>
                         <div>
                             <label for="servicePreset" class="block text-sm font-medium text-gray-300">Image Generation Service</label>
                             <select id="servicePreset" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="google-imagen3-apikey">Google - Imagen 3 (API Key)</option>
+                                <option value="google-imagen4-token">Google - Imagen 4 (Access Token)</option>
                                 <option value="openai-dalle3">OpenAI - DALL-E 3</option>
-                                <option value="google-imagen3">Google - Imagen 3</option>
-                                <option value="stability-sd-v1.6">Stability AI - SD v1.6</option>
                             </select>
                         </div>
+
+                        <!-- Imagen 3 Specific Settings -->
+                        <div id="imagen3Settings" class="space-y-4 p-3 bg-gray-900/50 rounded-md border border-gray-600" style="display: none;">
+                            <h4 class="text-sm font-semibold text-gray-300">Imagen 3 Settings</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="aspectRatio" class="block text-xs font-medium text-gray-400">Aspect Ratio</label>
+                                    <select id="aspectRatio" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-sm">
+                                        <option value="1:1">1:1 (Square)</option>
+                                        <option value="16:9">16:9 (Widescreen)</option>
+                                        <option value="9:16">9:16 (Vertical)</option>
+                                        <option value="4:3">4:3 (Standard)</option>
+                                        <option value="3:4">3:4 (Portrait)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="numberOfImages" class="block text-xs font-medium text-gray-400">Number of Images</label>
+                                    <input type="number" id="numberOfImages" value="1" min="1" max="4" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-sm">
+                                </div>
+                            </div>
+                        </div>
+
                         <div>
-                            <label for="apiKey" class="block text-sm font-medium text-gray-300">API Key</label>
-                            <input type="password" id="apiKey" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="Enter your API key for the selected service">
+                            <label for="apiKey" class="block text-sm font-medium text-gray-300">API Key / Access Token</label>
+                            <input type="password" id="apiKey" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="Enter your API key or access token">
+                            <p id="apiKeyHelpText" class="mt-2 text-xs text-gray-400" style="display: none;">
+                                To use this, you need a Google Cloud API Key. 
+                                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 hover:underline">Create one here</a>.
+                            </p>
+                            <p id="authHelpText" class="mt-2 text-xs text-gray-400" style="display: none;">
+                                Generate a temporary token with the gcloud CLI: 
+                                <code class="bg-gray-700 p-1 rounded">gcloud auth print-access-token</code>. 
+                                <a href="https://cloud.google.com/sdk/gcloud/reference/auth/print-access-token" target="_blank" class="text-indigo-400 hover:underline">Learn more</a>.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -92,26 +133,47 @@ A cozy library in a treehouse during a gentle rain</textarea>
     <script>
         // --- Service Presets ---
         const SERVICE_PRESETS = {
+            'google-imagen3-apikey': {
+                name: 'Google - Imagen 3 (API Key)',
+                authType: 'apiKeyInUrl',
+                apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
+                getBody: (prompt, params) => {
+                    return JSON.stringify({
+                        instances: [{ prompt: prompt }],
+                        parameters: {
+                            sampleCount: params.numberOfImages,
+                            aspectRatio: params.aspectRatio
+                        }
+                    });
+                },
+                responsePath: 'predictions'
+            },
+            'google-imagen4-token': {
+                name: 'Google - Imagen 4 (Access Token)',
+                authType: 'bearer',
+                apiUrl: 'https://us-central1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0907036644/locations/us-central1/publishers/google/models/imagen@4:predict',
+                getBody: (prompt) => {
+                    return JSON.stringify({
+                        instances: [{ prompt: prompt }],
+                        parameters: { sampleCount: 1 }
+                    });
+                },
+                responsePath: 'predictions'
+            },
             'openai-dalle3': {
                 name: 'OpenAI - DALL-E 3',
                 authType: 'bearer',
                 apiUrl: 'https://api.openai.com/v1/images/generations',
-                bodyTemplate: `{"model": "dall-e-3", "prompt": "{prompt}", "n": 1, "size": "1024x1024", "response_format": "b64_json"}`,
-                responsePath: 'data[0].b64_json'
-            },
-            'google-imagen3': {
-                name: 'Google - Imagen 3',
-                authType: 'apiKeyInUrl',
-                apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
-                bodyTemplate: `{"instances": [{"prompt": "{prompt}"}], "parameters": {"sampleCount": 1}}`,
-                responsePath: 'predictions[0].bytesBase64Encoded'
-            },
-            'stability-sd-v1.6': {
-                name: 'Stability AI - SD v1.6',
-                authType: 'bearer',
-                apiUrl: 'https://api.stability.ai/v1/generation/stable-diffusion-v1-6/text-to-image',
-                bodyTemplate: `{"text_prompts": [{"text": "{prompt}"}], "samples": 1, "steps": 30}`,
-                responsePath: 'artifacts[0].base64'
+                getBody: (prompt) => {
+                     return JSON.stringify({
+                        model: "dall-e-3",
+                        prompt: prompt,
+                        n: 1,
+                        size: "1024x1024",
+                        response_format: "b64_json"
+                    });
+                },
+                responsePath: 'data'
             }
         };
 
@@ -119,6 +181,8 @@ A cozy library in a treehouse during a gentle rain</textarea>
         const promptsEl = document.getElementById('prompts');
         const servicePresetEl = document.getElementById('servicePreset');
         const apiKeyEl = document.getElementById('apiKey');
+        const authHelpTextEl = document.getElementById('authHelpText');
+        const apiKeyHelpTextEl = document.getElementById('apiKeyHelpText');
         const startButton = document.getElementById('startButton');
         const stopButton = document.getElementById('stopButton');
         const downloadButton = document.getElementById('downloadButton');
@@ -126,6 +190,11 @@ A cozy library in a treehouse during a gentle rain</textarea>
         const progressBarEl = document.getElementById('progressBar');
         const resultsGrid = document.getElementById('resultsGrid').querySelector('.grid');
         const placeholderEl = document.getElementById('placeholder');
+        const promptPrefixEl = document.getElementById('promptPrefix');
+        const promptSuffixEl = document.getElementById('promptSuffix');
+        const imagen3SettingsEl = document.getElementById('imagen3Settings');
+        const aspectRatioEl = document.getElementById('aspectRatio');
+        const numberOfImagesEl = document.getElementById('numberOfImages');
 
         // State
         let isGenerating = false;
@@ -133,30 +202,18 @@ A cozy library in a treehouse during a gentle rain</textarea>
         let generationTimestamp = '';
 
         // --- Helper Functions ---
-
-        /**
-         * Sanitizes a string to be a valid filename.
-         * @param {string} name - The input string from a prompt.
-         * @returns {string} A filesystem-safe string.
-         */
         const sanitizeFilename = (name) => {
             if (!name) return 'untitled';
             return name
+                .trim()
                 .toLowerCase()
-                .substring(0, 30) // Truncate
-                .replace(/\s+/g, '_') // Replace spaces with underscores
-                .replace(/[^\w.-]/g, ''); // Remove non-word characters except dots and hyphens
+                .substring(0, 50)
+                .replace(/\s+/g, '_')
+                .replace(/[^\w.-]/g, '');
         };
 
-        /**
-         * Accesses a nested property in an object using a string path.
-         * @param {object} obj - The object to search.
-         * @param {string} path - The path string (e.g., 'data[0].b64_json').
-         * @returns {any} The value at the path, or undefined if not found.
-         */
         const getNestedValue = (obj, path) => {
             try {
-                // Handle array accessors like [0]
                 const properties = path.replace(/\[(\w+)\]/g, '.$1').split('.');
                 return properties.reduce((acc, key) => acc && acc[key], obj);
             } catch (error) {
@@ -164,27 +221,26 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 return undefined;
             }
         };
+        
+        const getBase64FromItem = (item, presetKey) => {
+            if (presetKey.startsWith('google-')) return item.bytesBase64Encoded;
+            if (presetKey === 'openai-dalle3') return item.b64_json;
+            return null;
+        };
 
-        /**
-         * Updates the UI to reflect the current progress.
-         * @param {string} text - The status text to display.
-         * @param {number} percentage - The progress bar percentage (0-100).
-         */
         const updateProgress = (text, percentage) => {
             statusEl.textContent = `Status: ${text}`;
             progressBarEl.style.width = `${percentage}%`;
         };
         
-        /**
-         * Renders an image card in the results grid.
-         * @param {object} imageData - Contains filename and base64 data or an error message.
-         */
-        const renderImageCard = ({ filename, base64Data, error }) => {
+        const renderImageCard = ({ filename, base64Data, error, aspectRatio = '1:1' }) => {
             const card = document.createElement('div');
             card.className = 'bg-gray-800 rounded-lg overflow-hidden shadow-lg flex flex-col';
             
             const imageContainer = document.createElement('div');
-            imageContainer.className = 'w-full h-40 bg-gray-700 flex items-center justify-center';
+            imageContainer.className = 'w-full bg-gray-700 flex items-center justify-center';
+            // Dynamically set the aspect ratio of the container
+            imageContainer.style.aspectRatio = aspectRatio.replace(':', ' / ');
 
             if (error) {
                 imageContainer.innerHTML = `<p class="text-center text-red-400 text-xs p-2">${error}</p>`;
@@ -205,19 +261,44 @@ A cozy library in a treehouse during a gentle rain</textarea>
             resultsGrid.appendChild(card);
         };
 
-        // --- Core Logic ---
+        const updateAuthUI = () => {
+            const selectedValue = servicePresetEl.value;
+            
+            apiKeyHelpTextEl.style.display = 'none';
+            authHelpTextEl.style.display = 'none';
+            imagen3SettingsEl.style.display = 'none';
 
+            if (selectedValue === 'google-imagen4-token') {
+                apiKeyEl.placeholder = "Enter your temporary OAuth 2.0 Access Token";
+                authHelpTextEl.style.display = 'block';
+            } else if (selectedValue === 'google-imagen3-apikey') {
+                apiKeyEl.placeholder = "Enter your Google Cloud API Key";
+                apiKeyHelpTextEl.style.display = 'block';
+                imagen3SettingsEl.style.display = 'block';
+            } else {
+                apiKeyEl.placeholder = "Enter your API key";
+            }
+        };
+
+        // --- Core Logic ---
         const startGeneration = async () => {
             const prompts = promptsEl.value.split('\n').filter(p => p.trim() !== '');
             const apiKey = apiKeyEl.value.trim();
-            const selectedPreset = SERVICE_PRESETS[servicePresetEl.value];
+            const selectedPresetKey = servicePresetEl.value;
+            const selectedPreset = SERVICE_PRESETS[selectedPresetKey];
             
+            const prefix = promptPrefixEl.value.trim();
+            const suffix = promptSuffixEl.value.trim();
+            const imagen3Params = {
+                aspectRatio: aspectRatioEl.value,
+                numberOfImages: parseInt(numberOfImagesEl.value, 10) || 1
+            };
+
             if (prompts.length === 0 || !apiKey) {
-                alert('Please enter your prompts and provide an API key.');
+                alert('Please enter your prompts and provide an API key/access token.');
                 return;
             }
             
-            // UI setup for generation
             isGenerating = true;
             startButton.disabled = true;
             stopButton.disabled = false;
@@ -226,8 +307,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
             placeholderEl.style.display = 'none';
             generatedImages = [];
             const now = new Date();
-            generationTimestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
-
+            generationTimestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
 
             for (let i = 0; i < prompts.length; i++) {
                 if (!isGenerating) {
@@ -236,63 +316,73 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 }
                 
                 const currentPrompt = prompts[i];
+                const fullPrompt = [prefix, currentPrompt, suffix].filter(Boolean).join(' ');
                 const progressPercentage = ((i + 1) / prompts.length) * 100;
-                updateProgress(`Generating ${i + 1} of ${prompts.length}: "${currentPrompt.substring(0, 40)}..."`, progressPercentage);
-
-                const filename = `${String(i + 1).padStart(3, '0')}-${sanitizeFilename(currentPrompt)}.png`;
+                updateProgress(`Generating ${i + 1} of ${prompts.length}: "${currentPrompt.substring(0, 30)}..."`, progressPercentage);
+                const baseFilename = `${String(i + 1).padStart(3, '0')}-${sanitizeFilename(fullPrompt)}`;
                 
                 try {
-                    // Escape the prompt text for safe injection into the JSON string template
-                    const escapedPrompt = JSON.stringify(currentPrompt).slice(1, -1);
-                    const body = selectedPreset.bodyTemplate.replace('{prompt}', escapedPrompt);
-
+                    let body;
+                    if (selectedPresetKey === 'google-imagen3-apikey') {
+                        body = selectedPreset.getBody(fullPrompt, imagen3Params);
+                    } else {
+                        body = selectedPreset.getBody(fullPrompt);
+                    }
+                    
                     let finalUrl = selectedPreset.apiUrl;
                     const fetchOptions = {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                         body: body
                     };
 
-                    // Handle different authentication methods
                     if (selectedPreset.authType === 'bearer') {
                         fetchOptions.headers['Authorization'] = `Bearer ${apiKey}`;
                     } else if (selectedPreset.authType === 'apiKeyInUrl') {
                         finalUrl = `${selectedPreset.apiUrl}?key=${apiKey}`;
                     }
-
+                    
                     const response = await fetch(finalUrl, fetchOptions);
 
                     if (!response.ok) {
                         const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-                        const errorMessage = errorData?.error?.message || `API Error: ${response.status}`;
+                        let errorMessage = errorData?.error?.message || `API Error: ${response.status}`;
                         throw new Error(errorMessage);
                     }
 
                     const data = await response.json();
-                    const base64Data = getNestedValue(data, selectedPreset.responsePath);
+                    const resultsArray = getNestedValue(data, selectedPreset.responsePath);
 
-                    if (!base64Data) {
-                       throw new Error('Image data not found at specified response path.');
+                    if (!resultsArray || !Array.isArray(resultsArray) || resultsArray.length === 0) {
+                       if (data.error && data.error.message) {
+                           throw new Error(data.error.message);
+                       }
+                       throw new Error('No image data found in API response.');
                     }
                     
-                    const imageData = { filename, base64Data };
-                    generatedImages.push(imageData);
-                    renderImageCard(imageData);
+                    let currentAspectRatio = '1:1';
+                    if (selectedPresetKey === 'google-imagen3-apikey') {
+                        currentAspectRatio = imagen3Params.aspectRatio;
+                    }
+
+                    resultsArray.forEach((item, index) => {
+                        const base64Data = getBase64FromItem(item, selectedPresetKey);
+                        if (base64Data) {
+                             const filename = resultsArray.length > 1 
+                                ? `${baseFilename}_${index + 1}.png`
+                                : `${baseFilename}.png`;
+                            const imageData = { filename, base64Data };
+                            generatedImages.push(imageData);
+                            renderImageCard({ ...imageData, aspectRatio: currentAspectRatio });
+                        }
+                    });
 
                 } catch (error) {
                     console.error('Generation error:', error);
-                    let errorMessage = error.message;
-                    if (error instanceof TypeError && error.message.includes("non ISO-8859-1")) {
-                        errorMessage = "Invalid character in API Key. Please check for smart quotes or other special characters and re-paste it.";
-                    }
-                    renderImageCard({ filename, error: errorMessage });
+                    renderImageCard({ filename: `${baseFilename}.png`, error: error.message });
                 }
             }
 
-            // Final UI state
             if (isGenerating) {
                  updateProgress(`Generation complete! ${generatedImages.length} images created.`, 100);
             }
@@ -327,11 +417,12 @@ A cozy library in a treehouse during a gentle rain</textarea>
         startButton.addEventListener('click', startGeneration);
         stopButton.addEventListener('click', () => { isGenerating = false; });
         downloadButton.addEventListener('click', downloadZip);
+        servicePresetEl.addEventListener('change', updateAuthUI);
 
+        // --- Initial UI Setup ---
+        document.addEventListener('DOMContentLoaded', updateAuthUI);
     </script>
 </body>
 </html>
-
-
 
 

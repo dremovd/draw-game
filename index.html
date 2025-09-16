@@ -73,7 +73,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
                                 </div>
                                 <div>
                                     <label for="numberOfImages" class="block text-xs font-medium text-gray-400">Number of Images</label>
-                                    <input type="number" id="numberOfImages" value="1" min="1" max="4" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-sm">
+                                    <input type="number" id="numberOfImages" value="1" min="1" max="8" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-sm">
                                 </div>
                             </div>
                         </div>
@@ -198,6 +198,9 @@ A cozy library in a treehouse during a gentle rain</textarea>
         let isGenerating = false;
         let generatedImages = [];
         let generationTimestamp = '';
+        
+        // --- Helper to add a delay ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         // --- Helper Functions ---
         const sanitizeForFilename = (name, maxLength = 50) => {
@@ -221,13 +224,14 @@ A cozy library in a treehouse during a gentle rain</textarea>
         };
 
         const urlToBase64 = (url) => {
+            // This function fetches an image from a URL and converts it to a base64 string.
+            // It uses a CORS proxy to bypass browser security restrictions.
             return new Promise(async (resolve, reject) => {
                 try {
-                    // Use a CORS proxy to fetch the image from the Poe URL
                     const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
                     const response = await fetch(proxyUrl);
                     if (!response.ok) {
-                        throw new Error(`Failed to fetch image via proxy: ${response.statusText}`);
+                        throw new Error(`Failed to fetch image via proxy: ${response.status} ${response.statusText}`);
                     }
                     const blob = await response.blob();
                     const reader = new FileReader();
@@ -243,11 +247,14 @@ A cozy library in a treehouse during a gentle rain</textarea>
         };
         
         const extractImageData = (item, presetKey) => {
+            // This function knows how to find the image data (either base64 or a URL)
+            // in the response from different APIs.
             if (presetKey.startsWith('google-')) return { base64: item.bytesBase64Encoded };
             if (presetKey === 'openai-dalle3') return { base64: item.b64_json };
             if (presetKey === 'poe-imagen4') {
                 const content = item.message?.content;
                 if (content) {
+                    // Poe returns the URL in a markdown-like format, so we extract it.
                     const urlMatch = content.match(/(https?:\/\/[^\s)]+)/);
                     if (urlMatch && urlMatch[0]) {
                         return { url: urlMatch[0] };
@@ -268,6 +275,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
             
             const imageContainer = document.createElement('div');
             imageContainer.className = 'w-full bg-gray-700 flex items-center justify-center';
+            // Dynamically set the aspect ratio for the container
             imageContainer.style.aspectRatio = aspectRatio.replace(':', ' / ');
 
             if (error) {
@@ -294,8 +302,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
             
             apiKeyHelpTextEl.style.display = 'none';
             advancedImageSettingsEl.style.display = 'none';
-            numberOfImagesEl.disabled = false; // Enable by default
-
+            
             if (selectedValue === 'google-imagen3-apikey' || selectedValue === 'poe-imagen4') {
                 apiKeyEl.placeholder = "Enter your API Key";
                 if (selectedValue === 'google-imagen3-apikey') {
@@ -336,32 +343,49 @@ A cozy library in a treehouse during a gentle rain</textarea>
             const now = new Date();
             generationTimestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
 
+            let totalGenerations = 0;
+            prompts.forEach(p => {
+                totalGenerations += (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'google-imagen3-apikey') ? advancedParams.numberOfImages : 1;
+            });
+            let completedGenerations = 0;
+
+
             for (let i = 0; i < prompts.length; i++) {
                 if (!isGenerating) {
-                    updateProgress(`Stopped by user.`, (i / prompts.length) * 100);
+                    updateProgress(`Stopped by user.`, (completedGenerations / totalGenerations) * 100);
                     break;
                 }
                 
                 const currentPrompt = prompts[i];
                 const fullPrompt = [prefix, currentPrompt, suffix].filter(Boolean).join(' ');
-                const progressPercentage = ((i + 1) / prompts.length) * 100;
-                updateProgress(`Generating ${i + 1} of ${prompts.length}: "${currentPrompt.substring(0, 30)}..."`, progressPercentage);
 
-                const sanitizedPrompt = sanitizeForFilename(currentPrompt, 30);
-                const sanitizedPrefix = sanitizeForFilename(prefix, 15);
-                const sanitizedSuffix = sanitizeForFilename(suffix, 15);
+                const sanitizedPrompt = sanitizeForFilename(currentPrompt, 25);
+                const sanitizedPrefix = sanitizeForFilename(prefix, 10);
+                const sanitizedSuffix = sanitizeForFilename(suffix, 10);
                 const baseFilename = [String(i + 1).padStart(3, '0'), sanitizedPrompt, sanitizedPrefix, sanitizedSuffix].filter(Boolean).join('_');
                 
-                try {
-                    let numRequests = 1;
-                    if (selectedPresetKey === 'poe-imagen4') {
-                        numRequests = advancedParams.numberOfImages;
-                    }
+                let numRequests = 1;
+                let isMultiRequest = false;
+                if (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'google-imagen3-apikey') {
+                    numRequests = advancedParams.numberOfImages;
+                    isMultiRequest = true;
+                }
 
-                    for (let j = 0; j < numRequests; j++) {
-                        if (!isGenerating) break;
 
-                        let body = selectedPreset.getBody(fullPrompt, advancedParams);
+                for (let j = 0; j < numRequests; j++) {
+                    if (!isGenerating) break;
+
+                    completedGenerations++;
+                    const progressPercentage = (completedGenerations / totalGenerations) * 100;
+                    updateProgress(`Generating image ${j + 1} for prompt ${i + 1}...`, progressPercentage);
+
+                    try {
+                        let body;
+                        if(selectedPresetKey === 'google-imagen3-apikey' && !isMultiRequest) {
+                             body = selectedPreset.getBody(fullPrompt, advancedParams);
+                        } else {
+                             body = selectedPreset.getBody(fullPrompt, { ...advancedParams, numberOfImages: 1 });
+                        }
                         
                         let finalUrl = selectedPreset.apiUrl;
                         const fetchOptions = {
@@ -387,9 +411,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
                         const resultsArray = getNestedValue(data, selectedPreset.responsePath);
 
                         if (!resultsArray || !Array.isArray(resultsArray) || resultsArray.length === 0) {
-                           if (data.error && data.error.message) {
-                               throw new Error(data.error.message);
-                           }
+                           if (data.error && data.error.message) throw new Error(data.error.message);
                            throw new Error('No image data found in API response.');
                         }
                         
@@ -409,9 +431,9 @@ A cozy library in a treehouse during a gentle rain</textarea>
                             
                             if (base64) {
                                  let filename;
-                                 if (numRequests > 1) { // Poe multi-request case
+                                 if (isMultiRequest) {
                                      filename = `${baseFilename}_${j + 1}.png`;
-                                 } else if (resultsArray.length > 1) { // Google multi-image response case
+                                 } else if (resultsArray.length > 1) {
                                      filename = `${baseFilename}_${index + 1}.png`;
                                  } else {
                                      filename = `${baseFilename}.png`;
@@ -421,10 +443,18 @@ A cozy library in a treehouse during a gentle rain</textarea>
                                 renderImageCard({ ...imageData, aspectRatio: currentAspectRatio });
                             }
                         }
+                        // Add a polite delay between sequential requests for the same prompt
+                        if (isMultiRequest && j < numRequests - 1) {
+                            updateProgress(`Waiting before next request...`, progressPercentage);
+                            await sleep(1500); 
+                        }
+
+                    } catch (error) {
+                        console.error('Generation error:', error);
+                        renderImageCard({ filename: `${baseFilename}.png`, error: error.message, aspectRatio: '1:1' });
+                        // If one request fails, stop trying for this prompt
+                        break; 
                     }
-                } catch (error) {
-                    console.error('Generation error:', error);
-                    renderImageCard({ filename: `${baseFilename}.png`, error: error.message, aspectRatio: '1:1' });
                 }
             }
 

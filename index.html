@@ -64,6 +64,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
                                 <div>
                                     <label for="aspectRatio" class="block text-xs font-medium text-gray-400">Aspect Ratio</label>
                                     <select id="aspectRatio" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-sm">
+                                        <option value="default">Default</option>
                                         <option value="1:1">1:1 (Square)</option>
                                         <option value="16:9">16:9 (Widescreen)</option>
                                         <option value="9:16">9:16 (Vertical)</option>
@@ -133,7 +134,11 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 authType: 'bearer',
                 apiUrl: 'https://api.poe.com/v1/chat/completions',
                 getBody: (prompt, params) => {
-                    const finalPrompt = `${prompt} --aspect_ratio ${params.aspectRatio}`;
+                    let finalPrompt = prompt;
+                    // Only add the aspect ratio if it's not 'default' and not already in the prompt.
+                    if (params.aspectRatio !== 'default' && !prompt.includes('--aspect_ratio') && !prompt.includes('--aspect')) {
+                        finalPrompt = `${prompt} --aspect ${params.aspectRatio}`;
+                    }
                      return JSON.stringify({
                         model: "Imagen-4",
                         messages: [{
@@ -149,12 +154,16 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 authType: 'apiKeyInUrl',
                 apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
                 getBody: (prompt, params) => {
+                    const parameters = {
+                        sampleCount: params.numberOfImages
+                    };
+                    // Only add aspect ratio to the request if it's not the default.
+                    if (params.aspectRatio !== 'default') {
+                        parameters.aspectRatio = params.aspectRatio;
+                    }
                     return JSON.stringify({
                         instances: [{ prompt: prompt }],
-                        parameters: {
-                            sampleCount: params.numberOfImages,
-                            aspectRatio: params.aspectRatio
-                        }
+                        parameters: parameters
                     });
                 },
                 responsePath: 'predictions'
@@ -349,7 +358,6 @@ A cozy library in a treehouse during a gentle rain</textarea>
             });
             let completedGenerations = 0;
 
-
             for (let i = 0; i < prompts.length; i++) {
                 if (!isGenerating) {
                     updateProgress(`Stopped by user.`, (completedGenerations / totalGenerations) * 100);
@@ -366,11 +374,11 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 
                 let numRequests = 1;
                 let isMultiRequest = false;
-                if (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'google-imagen3-apikey') {
+
+                if ((selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'google-imagen3-apikey')) {
                     numRequests = advancedParams.numberOfImages;
                     isMultiRequest = true;
                 }
-
 
                 for (let j = 0; j < numRequests; j++) {
                     if (!isGenerating) break;
@@ -378,82 +386,100 @@ A cozy library in a treehouse during a gentle rain</textarea>
                     completedGenerations++;
                     const progressPercentage = (completedGenerations / totalGenerations) * 100;
                     updateProgress(`Generating image ${j + 1} for prompt ${i + 1}...`, progressPercentage);
+                    
+                    let attempt = 0;
+                    const maxAttempts = 2;
+                    let success = false;
 
-                    try {
-                        let body;
-                        if(selectedPresetKey === 'google-imagen3-apikey' && !isMultiRequest) {
-                             body = selectedPreset.getBody(fullPrompt, advancedParams);
-                        } else {
-                             body = selectedPreset.getBody(fullPrompt, { ...advancedParams, numberOfImages: 1 });
-                        }
-                        
-                        let finalUrl = selectedPreset.apiUrl;
-                        const fetchOptions = {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                            body: body
-                        };
-
-                        if (selectedPreset.authType === 'bearer') {
-                            fetchOptions.headers['Authorization'] = `Bearer ${apiKey}`;
-                        } else if (selectedPreset.authType === 'apiKeyInUrl') {
-                            finalUrl = `${selectedPreset.apiUrl}?key=${apiKey}`;
-                        }
-                        
-                        const response = await fetch(finalUrl, fetchOptions);
-                        const data = await response.json();
-
-                        if (!response.ok) {
-                            const errorMessage = data?.error?.message || `API Error: ${response.status}`;
-                            throw new Error(errorMessage);
-                        }
-
-                        const resultsArray = getNestedValue(data, selectedPreset.responsePath);
-
-                        if (!resultsArray || !Array.isArray(resultsArray) || resultsArray.length === 0) {
-                           if (data.error && data.error.message) throw new Error(data.error.message);
-                           throw new Error('No image data found in API response.');
-                        }
-                        
-                        let currentAspectRatio = '1:1';
-                        if (selectedPresetKey === 'google-imagen3-apikey' || selectedPresetKey === 'poe-imagen4') {
-                            currentAspectRatio = advancedParams.aspectRatio;
-                        }
-
-                        for (const [index, item] of resultsArray.entries()) {
-                             if (!isGenerating) break;
-
-                            let { base64, url } = extractImageData(item, selectedPresetKey);
-
-                            if (url) {
-                                base64 = await urlToBase64(url);
+                    while (attempt < maxAttempts && !success && isGenerating) {
+                        attempt++;
+                        try {
+                            let body;
+                            // For Google, we pass the full image count. For Poe, we always pass 1 and loop.
+                            if(selectedPresetKey === 'google-imagen3-apikey' && !isMultiRequest) {
+                                 body = selectedPreset.getBody(fullPrompt, advancedParams);
+                            } else {
+                                 body = selectedPreset.getBody(fullPrompt, { ...advancedParams, numberOfImages: 1 });
                             }
                             
-                            if (base64) {
-                                 let filename;
-                                 if (isMultiRequest) {
-                                     filename = `${baseFilename}_${j + 1}.png`;
-                                 } else if (resultsArray.length > 1) {
-                                     filename = `${baseFilename}_${index + 1}.png`;
-                                 } else {
-                                     filename = `${baseFilename}.png`;
-                                 }
-                                const imageData = { filename, base64Data: base64 };
-                                generatedImages.push(imageData);
-                                renderImageCard({ ...imageData, aspectRatio: currentAspectRatio });
+                            let finalUrl = selectedPreset.apiUrl;
+                            const fetchOptions = {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                body: body
+                            };
+
+                            if (selectedPreset.authType === 'bearer') {
+                                fetchOptions.headers['Authorization'] = `Bearer ${apiKey}`;
+                            } else if (selectedPreset.authType === 'apiKeyInUrl') {
+                                finalUrl = `${selectedPreset.apiUrl}?key=${apiKey}`;
+                            }
+                            
+                            const response = await fetch(finalUrl, fetchOptions);
+                           
+                            if (response.status === 500 && selectedPresetKey === 'poe-imagen4' && attempt < maxAttempts) {
+                                throw new Error('Server error (500)'); // Trigger the retry logic
+                            }
+
+                            const data = await response.json();
+
+                            if (!response.ok) {
+                                const errorMessage = data?.error?.message || `API Error: ${response.status}`;
+                                throw new Error(errorMessage);
+                            }
+
+                            success = true; // Mark as successful to exit the retry loop
+                            const resultsArray = getNestedValue(data, selectedPreset.responsePath);
+
+                            if (!resultsArray || !Array.isArray(resultsArray) || resultsArray.length === 0) {
+                               if (data.error && data.error.message) throw new Error(data.error.message);
+                               throw new Error('No image data found in API response.');
+                            }
+                            
+                            let currentAspectRatio = '1:1';
+                            if ((selectedPresetKey === 'google-imagen3-apikey' || selectedPresetKey === 'poe-imagen4') && advancedParams.aspectRatio !== 'default') {
+                                currentAspectRatio = advancedParams.aspectRatio;
+                            }
+
+                            for (const [index, item] of resultsArray.entries()) {
+                                 if (!isGenerating) break;
+
+                                let { base64, url } = extractImageData(item, selectedPresetKey);
+
+                                if (url) {
+                                    base64 = await urlToBase64(url);
+                                }
+                                
+                                if (base64) {
+                                     let filename;
+                                     if (isMultiRequest) {
+                                         filename = `${baseFilename}_${j + 1}.png`;
+                                     } else if (resultsArray.length > 1) {
+                                         filename = `${baseFilename}_${index + 1}.png`;
+                                     } else {
+                                         filename = `${baseFilename}.png`;
+                                     }
+                                    const imageData = { filename, base64Data: base64 };
+                                    generatedImages.push(imageData);
+                                    renderImageCard({ ...imageData, aspectRatio: currentAspectRatio });
+                                }
+                            }
+                           
+                            if (isMultiRequest && j < numRequests - 1 && selectedPresetKey === 'poe-imagen4') {
+                                updateProgress(`Waiting before next request...`, progressPercentage);
+                                await sleep(1500); 
+                            }
+
+                        } catch (error) {
+                            console.error(`Attempt ${attempt} failed:`, error);
+                            if (error.message.includes('Server error (500)') && attempt < maxAttempts) {
+                                updateProgress(`Server error. Retrying request ${j + 1} (attempt ${attempt + 1}/${maxAttempts})...`, progressPercentage);
+                                await sleep(2000); // Wait before retrying
+                            } else {
+                                renderImageCard({ filename: `${baseFilename}.png`, error: error.message, aspectRatio: '1:1' });
+                                break; // Break from the retry loop on non-retryable errors
                             }
                         }
-                        // Add a polite delay between sequential requests for the same prompt
-                        if (isMultiRequest && j < numRequests - 1) {
-                            updateProgress(`Waiting before next request...`, progressPercentage);
-                            await sleep(1500); 
-                        }
-
-                    } catch (error) {
-                        console.error('Generation error:', error);
-                        renderImageCard({ filename: `${baseFilename}.png`, error: error.message, aspectRatio: '1:1' });
-                        // If one request fails, stop trying for this prompt
-                        break; 
                     }
                 }
             }

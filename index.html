@@ -51,6 +51,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
                         <div>
                             <label for="servicePreset" class="block text-sm font-medium text-gray-300">Image Generation Service</label>
                             <select id="servicePreset" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="poe-seedream4" selected>Poe - Seedream-4.0 (API Key)</option>
                                 <option value="poe-imagen4">Poe - Imagen 4 (API Key)</option>
                                 <option value="google-imagen3-apikey">Google - Imagen 3 (API Key)</option>
                                 <option value="openai-dalle3">OpenAI - DALL-E 3</option>
@@ -129,6 +130,26 @@ A cozy library in a treehouse during a gentle rain</textarea>
     <script>
         // --- Service Presets ---
         const SERVICE_PRESETS = {
+            'poe-seedream4': {
+                name: 'Poe - Seedream-4.0 (API Key)',
+                authType: 'bearer',
+                apiUrl: 'https://api.poe.com/v1/chat/completions',
+                getBody: (prompt, params) => {
+                    let finalPrompt = prompt;
+                    // Only add the aspect ratio if it's not 'default' and not already in the prompt.
+                    if (params.aspectRatio !== 'default' && !prompt.includes('--aspect_ratio') && !prompt.includes('--aspect')) {
+                        finalPrompt = `${prompt} --aspect ${params.aspectRatio}`;
+                    }
+                     return JSON.stringify({
+                        model: "Seedream-4.0",
+                        messages: [{
+                            role: "user",
+                            content: finalPrompt
+                        }]
+                    });
+                },
+                responsePath: 'choices'
+            },
             'poe-imagen4': {
                 name: 'Poe - Imagen 4 (API Key)',
                 authType: 'bearer',
@@ -260,7 +281,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
             // in the response from different APIs.
             if (presetKey.startsWith('google-')) return { base64: item.bytesBase64Encoded };
             if (presetKey === 'openai-dalle3') return { base64: item.b64_json };
-            if (presetKey === 'poe-imagen4') {
+            if (presetKey === 'poe-imagen4' || presetKey === 'poe-seedream4') {
                 const content = item.message?.content;
                 if (content) {
                     // Poe returns the URL in a markdown-like format, so we extract it.
@@ -312,7 +333,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
             apiKeyHelpTextEl.style.display = 'none';
             advancedImageSettingsEl.style.display = 'none';
             
-            if (selectedValue === 'google-imagen3-apikey' || selectedValue === 'poe-imagen4') {
+            if (selectedValue === 'google-imagen3-apikey' || selectedValue === 'poe-imagen4' || selectedValue === 'poe-seedream4') {
                 apiKeyEl.placeholder = "Enter your API Key";
                 if (selectedValue === 'google-imagen3-apikey') {
                     apiKeyHelpTextEl.style.display = 'block';
@@ -354,7 +375,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
 
             let totalGenerations = 0;
             prompts.forEach(p => {
-                totalGenerations += (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'google-imagen3-apikey') ? advancedParams.numberOfImages : 1;
+                totalGenerations += (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4' || selectedPresetKey === 'google-imagen3-apikey') ? advancedParams.numberOfImages : 1;
             });
             let completedGenerations = 0;
 
@@ -375,7 +396,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 let numRequests = 1;
                 let isMultiRequest = false;
 
-                if ((selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'google-imagen3-apikey')) {
+                if ((selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4' || selectedPresetKey === 'google-imagen3-apikey')) {
                     numRequests = advancedParams.numberOfImages;
                     isMultiRequest = true;
                 }
@@ -417,7 +438,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
                             
                             const response = await fetch(finalUrl, fetchOptions);
                            
-                            if (response.status === 500 && selectedPresetKey === 'poe-imagen4' && attempt < maxAttempts) {
+                            if (response.status === 500 && (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4') && attempt < maxAttempts) {
                                 throw new Error('Server error (500)'); // Trigger the retry logic
                             }
 
@@ -437,7 +458,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
                             }
                             
                             let currentAspectRatio = '1:1';
-                            if ((selectedPresetKey === 'google-imagen3-apikey' || selectedPresetKey === 'poe-imagen4') && advancedParams.aspectRatio !== 'default') {
+                            if ((selectedPresetKey === 'google-imagen3-apikey' || selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4') && advancedParams.aspectRatio !== 'default') {
                                 currentAspectRatio = advancedParams.aspectRatio;
                             }
 
@@ -465,9 +486,9 @@ A cozy library in a treehouse during a gentle rain</textarea>
                                 }
                             }
                            
-                            if (isMultiRequest && j < numRequests - 1 && selectedPresetKey === 'poe-imagen4') {
+                            if (isMultiRequest && j < numRequests - 1 && (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4')) {
                                 updateProgress(`Waiting before next request...`, progressPercentage);
-                                await sleep(1500); 
+                                await sleep(1500);
                             }
 
                         } catch (error) {
@@ -514,7 +535,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
             settingsContent += `Prompt Prefix: ${promptPrefixEl.value}\n`;
             settingsContent += `Prompt Suffix: ${promptSuffixEl.value}\n\n`;
 
-            if (selectedPresetKey === 'google-imagen3-apikey' || selectedPresetKey === 'poe-imagen4') {
+            if (selectedPresetKey === 'google-imagen3-apikey' || selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4') {
                 settingsContent += `--- Advanced Settings ---\n`;
                 settingsContent += `Aspect Ratio: ${aspectRatioEl.value}\n`;
                 settingsContent += `Number of Images Per Prompt: ${numberOfImagesEl.value}\n`;

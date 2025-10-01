@@ -82,18 +82,18 @@ A cozy library in a treehouse during a gentle rain</textarea>
                                 <label for="referenceImage" class="block text-xs font-medium text-gray-400">Reference Image (Optional)</label>
                                 <div id="referenceImageDropZone" class="mt-1 w-full p-4 bg-gray-700 border-2 border-dashed border-gray-600 rounded-md text-center cursor-pointer hover:border-indigo-500 hover:bg-gray-600 transition-colors">
                                     <div id="referenceImagePreview" class="hidden mb-2">
-                                        <img id="referenceImagePreviewImg" class="mx-auto max-h-32 rounded-md" alt="Reference preview">
-                                        <button id="removeReferenceImage" class="mt-2 px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Remove</button>
+                                        <div id="referenceImagePreviewContainer" class="flex flex-wrap gap-2 justify-center mb-2"></div>
+                                        <button id="removeReferenceImage" class="mt-2 px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Remove All</button>
                                     </div>
                                     <div id="referenceImagePlaceholder">
                                         <svg class="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                         <p class="mt-2 text-xs text-gray-400">Click to upload, drag & drop, or paste (Ctrl/Cmd+V)</p>
-                                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF up to 10MB (can add multiple)</p>
                                     </div>
                                 </div>
-                                <input type="file" id="referenceImage" accept="image/*" class="hidden">
+                                <input type="file" id="referenceImage" accept="image/*" multiple class="hidden">
                             </div>
                         </div>
 
@@ -159,12 +159,14 @@ A cozy library in a treehouse during a gentle rain</textarea>
                     }
 
                     const messageContent = [];
-                    if (params.referenceImageBase64) {
-                        messageContent.push({
-                            type: "image_url",
-                            image_url: {
-                                url: `data:image/jpeg;base64,${params.referenceImageBase64}`
-                            }
+                    if (params.referenceImageBase64Array && params.referenceImageBase64Array.length > 0) {
+                        params.referenceImageBase64Array.forEach(base64 => {
+                            messageContent.push({
+                                type: "image_url",
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64}`
+                                }
+                            });
                         });
                     }
                     messageContent.push({
@@ -177,7 +179,8 @@ A cozy library in a treehouse during a gentle rain</textarea>
                         messages: [{
                             role: "user",
                             content: messageContent
-                        }]
+                        }],
+                        stream: false  // Recommended for media bots
                     });
                 },
                 responsePath: 'choices'
@@ -194,12 +197,14 @@ A cozy library in a treehouse during a gentle rain</textarea>
                     }
 
                     const messageContent = [];
-                    if (params.referenceImageBase64) {
-                        messageContent.push({
-                            type: "image_url",
-                            image_url: {
-                                url: `data:image/jpeg;base64,${params.referenceImageBase64}`
-                            }
+                    if (params.referenceImageBase64Array && params.referenceImageBase64Array.length > 0) {
+                        params.referenceImageBase64Array.forEach(base64 => {
+                            messageContent.push({
+                                type: "image_url",
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64}`
+                                }
+                            });
                         });
                     }
                     messageContent.push({
@@ -212,7 +217,8 @@ A cozy library in a treehouse during a gentle rain</textarea>
                         messages: [{
                             role: "user",
                             content: messageContent
-                        }]
+                        }],
+                        stream: false  // Recommended for media bots
                     });
                 },
                 responsePath: 'choices'
@@ -274,12 +280,12 @@ A cozy library in a treehouse during a gentle rain</textarea>
         const poeReferenceImageSectionEl = document.getElementById('poeReferenceImageSection');
         const referenceImageDropZoneEl = document.getElementById('referenceImageDropZone');
         const referenceImagePreviewEl = document.getElementById('referenceImagePreview');
-        const referenceImagePreviewImgEl = document.getElementById('referenceImagePreviewImg');
+        const referenceImagePreviewContainerEl = document.getElementById('referenceImagePreviewContainer');
         const referenceImagePlaceholderEl = document.getElementById('referenceImagePlaceholder');
         const removeReferenceImageEl = document.getElementById('removeReferenceImage');
 
-        // State for reference image
-        let referenceImageFile = null;
+        // State for reference images (now supports multiple)
+        let referenceImageFiles = [];
 
         // State
         let isGenerating = false;
@@ -336,22 +342,59 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 return;
             }
 
-            referenceImageFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                referenceImagePreviewImgEl.src = e.target.result;
-                referenceImagePlaceholderEl.classList.add('hidden');
-                referenceImagePreviewEl.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
+            referenceImageFiles.push(file);
+            updateReferenceImagePreview();
+        };
+
+        const handleReferenceImageFiles = (files) => {
+            for (let file of files) {
+                handleReferenceImageFile(file);
+            }
+        };
+
+        const updateReferenceImagePreview = () => {
+            referenceImagePreviewContainerEl.innerHTML = '';
+
+            if (referenceImageFiles.length === 0) {
+                referenceImagePlaceholderEl.classList.remove('hidden');
+                referenceImagePreviewEl.classList.add('hidden');
+                return;
+            }
+
+            referenceImagePlaceholderEl.classList.add('hidden');
+            referenceImagePreviewEl.classList.remove('hidden');
+
+            referenceImageFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.className = 'relative';
+
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'max-h-24 rounded-md';
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '×';
+                    removeBtn.className = 'absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white rounded-full text-xs hover:bg-red-700';
+                    removeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        referenceImageFiles.splice(index, 1);
+                        updateReferenceImagePreview();
+                    };
+
+                    imgWrapper.appendChild(img);
+                    imgWrapper.appendChild(removeBtn);
+                    referenceImagePreviewContainerEl.appendChild(imgWrapper);
+                };
+                reader.readAsDataURL(file);
+            });
         };
 
         const clearReferenceImage = () => {
-            referenceImageFile = null;
+            referenceImageFiles = [];
             referenceImageEl.value = '';
-            referenceImagePreviewImgEl.src = '';
-            referenceImagePlaceholderEl.classList.remove('hidden');
-            referenceImagePreviewEl.classList.add('hidden');
+            updateReferenceImagePreview();
         };
 
         const sanitizeForFilename = (name, maxLength = 50) => {
@@ -471,7 +514,8 @@ A cozy library in a treehouse during a gentle rain</textarea>
                     apiKeyHelpTextEl.style.display = 'block';
                 }
                 advancedImageSettingsEl.style.display = 'block';
-                if (selectedValue === 'poe-imagen4' || selectedValue === 'poe-seedream4') {
+                // Only show reference image section for Seedream-4.0
+                if (selectedValue === 'poe-seedream4') {
                     poeReferenceImageSectionEl.style.display = 'block';
                 }
             } else {
@@ -493,13 +537,15 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 numberOfImages: parseInt(numberOfImagesEl.value, 10) || 1
             };
 
-            // Handle reference image for POE models
-            if ((selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4') && referenceImageFile) {
+            // Handle reference images for POE models (only Seedream-4.0)
+            if (selectedPresetKey === 'poe-seedream4' && referenceImageFiles.length > 0) {
                 try {
                     // Convert alpha channel to white background for POE models
-                    advancedParams.referenceImageBase64 = await fileToBase64(referenceImageFile, true);
+                    advancedParams.referenceImageBase64Array = await Promise.all(
+                        referenceImageFiles.map(file => fileToBase64(file, true))
+                    );
                 } catch (error) {
-                    alert('Failed to load reference image: ' + error.message);
+                    alert('Failed to load reference images: ' + error.message);
                     return;
                 }
             }
@@ -672,14 +718,20 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 zip.file(img.filename, img.base64Data, { base64: true });
             });
 
-            // Add reference image if it exists
-            if (referenceImageFile) {
+            // Add reference images if they exist
+            if (referenceImageFiles.length > 0) {
                 try {
-                    const referenceBase64 = await fileToBase64(referenceImageFile);
-                    const extension = referenceImageFile.name.split('.').pop() || 'png';
-                    zip.file(`reference_image.${extension}`, referenceBase64, { base64: true });
+                    for (let i = 0; i < referenceImageFiles.length; i++) {
+                        const file = referenceImageFiles[i];
+                        const referenceBase64 = await fileToBase64(file);
+                        const extension = file.name.split('.').pop() || 'png';
+                        const filename = referenceImageFiles.length > 1
+                            ? `reference_image_${i + 1}.${extension}`
+                            : `reference_image.${extension}`;
+                        zip.file(filename, referenceBase64, { base64: true });
+                    }
                 } catch (error) {
-                    console.error('Failed to add reference image to zip:', error);
+                    console.error('Failed to add reference images to zip:', error);
                 }
             }
 
@@ -697,8 +749,15 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 settingsContent += `--- Advanced Settings ---\n`;
                 settingsContent += `Aspect Ratio: ${aspectRatioEl.value}\n`;
                 settingsContent += `Number of Images Per Prompt: ${numberOfImagesEl.value}\n`;
-                if (referenceImageFile) {
-                    settingsContent += `Reference Image: reference_image.${referenceImageFile.name.split('.').pop() || 'png'}\n`;
+                if (referenceImageFiles.length > 0) {
+                    settingsContent += `Reference Images: ${referenceImageFiles.length}\n`;
+                    referenceImageFiles.forEach((file, i) => {
+                        const extension = file.name.split('.').pop() || 'png';
+                        const filename = referenceImageFiles.length > 1
+                            ? `reference_image_${i + 1}.${extension}`
+                            : `reference_image.${extension}`;
+                        settingsContent += `  - ${filename}\n`;
+                    });
                 }
                 settingsContent += `\n`;
             }
@@ -729,7 +788,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
         referenceImageDropZoneEl.addEventListener('click', () => referenceImageEl.click());
         referenceImageEl.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                handleReferenceImageFile(e.target.files[0]);
+                handleReferenceImageFiles(e.target.files);
             }
         });
         removeReferenceImageEl.addEventListener('click', (e) => {
@@ -755,7 +814,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
 
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                handleReferenceImageFile(files[0]);
+                handleReferenceImageFiles(files);
             }
         });
 

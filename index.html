@@ -30,38 +30,82 @@
             <div class="lg:col-span-2 flex flex-col space-y-4">
                 <!-- Prompts Section -->
                 <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                    <label for="prompts" class="block text-sm font-semibold text-white mb-2">
-                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs mr-2">1</span>
+                    <h2 class="text-sm font-semibold text-white mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
                         Prompts
-                    </label>
-                    <textarea id="prompts" rows="6" class="w-full p-3 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-200 placeholder-gray-500 text-sm" placeholder="Enter one prompt per line...&#10;e.g., A futuristic city at sunset&#10;      A robot reading a book">A smiling sloth in a business suit
-A majestic jellyfish floating in a starry galaxy
-A cozy library in a treehouse during a gentle rain</textarea>
-                </div>
-
-                <!-- API Configuration Section -->
-                <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                    <h2 class="text-sm font-semibold text-white mb-3">
-                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs mr-2">2</span>
-                        Service Configuration
                     </h2>
                     <div class="space-y-3">
                         <div>
-                            <label for="servicePreset" class="block text-xs font-medium text-gray-300 mb-1">Service</label>
-                            <select id="servicePreset" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                                <option value="poe-seedream4" selected>Poe - Seedream-4.0</option>
-                                <option value="poe-imagen4">Poe - Imagen 4</option>
-                                <option value="google-imagen3-apikey">Google - Imagen 3</option>
-                                <option value="openai-dalle3">OpenAI - DALL-E 3</option>
-                            </select>
+                            <label for="prompts" class="block text-xs font-medium text-gray-300 mb-1">Positive Prompts (one per line)</label>
+                            <textarea id="prompts" rows="5" class="w-full p-3 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-200 placeholder-gray-500 text-sm" placeholder="A futuristic city at sunset&#10;A robot reading a book&#10;A fantasy landscape with floating islands">A smiling sloth in a business suit
+A majestic jellyfish floating in a starry galaxy
+A cozy library in a treehouse during a gentle rain</textarea>
+                        </div>
+                        <div>
+                            <label for="negativePrompt" class="block text-xs font-medium text-gray-300 mb-1">Negative Prompt (optional)</label>
+                            <input type="text" id="negativePrompt" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-200 placeholder-gray-500" placeholder="e.g., ugly, deformed, blurry, low quality">
+                        </div>
+                        <div id="promptPreview" class="p-2 bg-gray-900/70 rounded border border-gray-600 text-xs text-gray-400 hidden">
+                            <span class="font-medium text-gray-300">Preview:</span> <span id="promptPreviewText"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generation Settings Section -->
+                <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                    <h2 class="text-sm font-semibold text-white mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                        </svg>
+                        Generation Settings
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="servicePreset" class="block text-xs font-medium text-gray-300 mb-1">Service</label>
+                                <select id="servicePreset" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                    <option value="poe-seedream4" selected>Poe - Seedream-4.0</option>
+                                    <option value="poe-imagen4">Poe - Imagen 4</option>
+                                    <option value="google-imagen3-apikey">Google - Imagen 3</option>
+                                    <option value="openai-dalle3">OpenAI - DALL-E 3</option>
+                                </select>
+                            </div>
+                            <div id="aspectRatioContainer">
+                                <label for="aspectRatio" class="block text-xs font-medium text-gray-300 mb-1">Aspect Ratio</label>
+                                <select id="aspectRatio" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-sm focus:ring-2 focus:ring-indigo-500">
+                                    <option value="default">Default</option>
+                                    <option value="1:1">1:1 Square</option>
+                                    <option value="16:9">16:9 Wide</option>
+                                    <option value="9:16">9:16 Vertical</option>
+                                    <option value="4:3">4:3 Standard</option>
+                                    <option value="3:4">3:4 Portrait</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div>
-                            <label for="apiKey" class="block text-xs font-medium text-gray-300 mb-1">API Key</label>
-                            <input type="password" id="apiKey" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="Enter your API key">
-                            <p id="apiKeyHelpText" class="mt-1 text-xs text-gray-400" style="display: none;">
-                                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 hover:underline">Get API key →</a>
-                            </p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="apiKey" class="block text-xs font-medium text-gray-300 mb-1">API Key</label>
+                                <div class="flex gap-2">
+                                    <input type="password" id="apiKey" class="flex-1 p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="Enter your API key">
+                                    <button id="clearApiKey" class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs" title="Clear saved key">✕</button>
+                                </div>
+                                <div class="mt-1 flex items-center justify-between">
+                                    <label class="flex items-center text-xs text-gray-400 cursor-pointer">
+                                        <input type="checkbox" id="saveApiKey" class="mr-1 rounded">
+                                        <span>Remember key</span>
+                                    </label>
+                                    <p id="apiKeyHelpText" class="text-xs text-gray-400" style="display: none;">
+                                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 hover:underline">Get API key →</a>
+                                    </p>
+                                </div>
+                            </div>
+                            <div id="numberOfImagesContainer">
+                                <label for="numberOfImages" class="block text-xs font-medium text-gray-300 mb-1">Images per Prompt</label>
+                                <input type="number" id="numberOfImages" value="1" min="1" max="8" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-sm focus:ring-2 focus:ring-indigo-500">
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3">
@@ -76,70 +120,52 @@ A cozy library in a treehouse during a gentle rain</textarea>
                         </div>
 
                         <!-- Advanced Settings -->
-                        <div id="advancedImageSettings" class="space-y-3 p-3 bg-gray-900/50 rounded-md border border-gray-600" style="display: none;">
-                            <h4 class="text-xs font-semibold text-gray-300 mb-2">Advanced</h4>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label for="aspectRatio" class="block text-xs font-medium text-gray-400 mb-1">Aspect Ratio</label>
-                                    <select id="aspectRatio" class="w-full p-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500">
-                                        <option value="default">Default</option>
-                                        <option value="1:1">1:1 Square</option>
-                                        <option value="16:9">16:9 Wide</option>
-                                        <option value="9:16">9:16 Vertical</option>
-                                        <option value="4:3">4:3 Standard</option>
-                                        <option value="3:4">3:4 Portrait</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="numberOfImages" class="block text-xs font-medium text-gray-400 mb-1">Images per Prompt</label>
-                                    <input type="number" id="numberOfImages" value="1" min="1" max="8" class="w-full p-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500">
-                                </div>
-                            </div>
-                            <div id="poeReferenceImageSection" style="display: none;">
-                                <label for="referenceImage" class="block text-xs font-medium text-gray-400 mb-1">Reference Image</label>
-                                <div id="referenceImageDropZone" class="w-full p-3 bg-gray-800 border-2 border-dashed border-gray-600 rounded-md text-center cursor-pointer hover:border-indigo-500 hover:bg-gray-700 transition-colors">
-                                    <div id="referenceImagePreview" class="hidden mb-2">
-                                        <div id="referenceImagePreviewContainer" class="flex flex-wrap gap-2 justify-center mb-2"></div>
-                                        <button id="removeReferenceImage" class="mt-1 px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Remove All</button>
-                                    </div>
-                                    <div id="referenceImagePlaceholder">
-                                        <svg class="mx-auto h-8 w-8 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                        <p class="mt-1 text-xs text-gray-400">Click, drag, or paste image</p>
-                                        <p class="text-xs text-gray-500">PNG, JPG, GIF (max 10MB)</p>
-                                    </div>
-                                </div>
-                                <input type="file" id="referenceImage" accept="image/*" multiple class="hidden">
-                            </div>
-                        </div>
-
-                        <!-- Proxy Settings (Collapsible) -->
                         <details class="group">
-                            <summary class="cursor-pointer text-xs text-gray-400 hover:text-gray-300 select-none">⚙️ Proxy Settings</summary>
-                            <div class="mt-2 grid grid-cols-2 gap-3">
-                                <div>
-                                    <label for="proxyUrl" class="block text-xs font-medium text-gray-400 mb-1">Proxy URL</label>
-                                    <input type="text" id="proxyUrl" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500" placeholder="https://corsproxy.io/?">
+                            <summary class="cursor-pointer text-xs text-gray-400 hover:text-gray-300 select-none">⚙️ More Options</summary>
+                            <div class="mt-3 space-y-3 pt-3 border-t border-gray-600">
+                                <div id="poeReferenceImageSection" style="display: none;">
+                                    <label for="referenceImage" class="block text-xs font-medium text-gray-400 mb-1">Reference Image</label>
+                                    <div id="referenceImageDropZone" class="w-full p-3 bg-gray-800 border-2 border-dashed border-gray-600 rounded-md text-center cursor-pointer hover:border-indigo-500 hover:bg-gray-700 transition-colors">
+                                        <div id="referenceImagePreview" class="hidden mb-2">
+                                            <div id="referenceImagePreviewContainer" class="flex flex-wrap gap-2 justify-center mb-2"></div>
+                                            <button id="removeReferenceImage" class="mt-1 px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Remove All</button>
+                                        </div>
+                                        <div id="referenceImagePlaceholder">
+                                            <svg class="mx-auto h-8 w-8 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <p class="mt-1 text-xs text-gray-400">Click, drag, or paste image</p>
+                                            <p class="text-xs text-gray-500">PNG, JPG, GIF (max 10MB)</p>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="referenceImage" accept="image/*" multiple class="hidden">
                                 </div>
                                 <div>
-                                    <label for="proxyToken" class="block text-xs font-medium text-gray-400 mb-1">Proxy Token</label>
-                                    <input type="password" id="proxyToken" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500" placeholder="Optional token">
+                                    <label class="block text-xs font-medium text-gray-400 mb-1">Proxy Settings</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="proxyUrl" class="w-full p-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500" placeholder="Proxy URL">
+                                        <input type="password" id="proxyToken" class="w-full p-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500" placeholder="Token (optional)">
+                                    </div>
                                 </div>
                             </div>
                         </details>
                     </div>
                 </div>
 
-                <!-- Controls & Progress -->
+                <!-- Action Panel -->
                 <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                    <h2 class="text-sm font-semibold text-white mb-3">
-                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs mr-2">3</span>
-                        Generate
+                    <h2 class="text-sm font-semibold text-white mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Action Panel
                     </h2>
+                    <div id="imageEstimate" class="mb-3 p-2 bg-gray-900/50 rounded border border-gray-600 text-xs text-gray-300">
+                        <span class="font-medium">Will generate:</span> <span id="imageCount" class="text-indigo-400 font-semibold">0 images</span>
+                    </div>
                     <div class="flex gap-3 mb-3">
                         <button id="startButton" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm">
-                            ▶ Start
+                            ▶ Start Generation
                         </button>
                         <button id="stopButton" class="px-4 py-2.5 bg-red-600/80 text-white font-semibold rounded-md shadow-md hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-500 transition text-sm" disabled>
                             ■ Stop
@@ -293,8 +319,13 @@ A cozy library in a treehouse during a gentle rain</textarea>
 
         // DOM Elements
         const promptsEl = document.getElementById('prompts');
+        const negativePromptEl = document.getElementById('negativePrompt');
+        const promptPreviewEl = document.getElementById('promptPreview');
+        const promptPreviewTextEl = document.getElementById('promptPreviewText');
         const servicePresetEl = document.getElementById('servicePreset');
         const apiKeyEl = document.getElementById('apiKey');
+        const saveApiKeyEl = document.getElementById('saveApiKey');
+        const clearApiKeyEl = document.getElementById('clearApiKey');
         const apiKeyHelpTextEl = document.getElementById('apiKeyHelpText');
         const proxyUrlEl = document.getElementById('proxyUrl');
         const proxyTokenEl = document.getElementById('proxyToken');
@@ -303,13 +334,16 @@ A cozy library in a treehouse during a gentle rain</textarea>
         const downloadButton = document.getElementById('downloadButton');
         const statusEl = document.getElementById('status');
         const progressBarEl = document.getElementById('progressBar');
+        const imageCountEl = document.getElementById('imageCount');
         const resultsGrid = document.getElementById('resultsGrid').querySelector('.grid');
         const placeholderEl = document.getElementById('placeholder');
         const promptPrefixEl = document.getElementById('promptPrefix');
         const promptSuffixEl = document.getElementById('promptSuffix');
         const advancedImageSettingsEl = document.getElementById('advancedImageSettings');
         const aspectRatioEl = document.getElementById('aspectRatio');
+        const aspectRatioContainerEl = document.getElementById('aspectRatioContainer');
         const numberOfImagesEl = document.getElementById('numberOfImages');
+        const numberOfImagesContainerEl = document.getElementById('numberOfImagesContainer');
         const referenceImageEl = document.getElementById('referenceImage');
         const poeReferenceImageSectionEl = document.getElementById('poeReferenceImageSection');
         const referenceImageDropZoneEl = document.getElementById('referenceImageDropZone');
@@ -328,6 +362,53 @@ A cozy library in a treehouse during a gentle rain</textarea>
         
         // --- Helper to add a delay ---
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // --- New Helper Functions ---
+        // API Key Management
+        const loadApiKey = () => {
+            const saved = localStorage.getItem('apiKey');
+            if (saved) {
+                apiKeyEl.value = saved;
+                saveApiKeyEl.checked = true;
+            }
+        };
+
+        const saveApiKey = () => {
+            if (saveApiKeyEl.checked) {
+                localStorage.setItem('apiKey', apiKeyEl.value);
+            } else {
+                localStorage.removeItem('apiKey');
+            }
+        };
+
+        // Prompt Preview
+        const updatePromptPreview = () => {
+            const prompts = promptsEl.value.split('\n').filter(p => p.trim() !== '');
+            if (prompts.length === 0) {
+                promptPreviewEl.classList.add('hidden');
+                return;
+            }
+            const prefix = promptPrefixEl.value.trim();
+            const suffix = promptSuffixEl.value.trim();
+            const firstPrompt = prompts[0];
+            const fullPrompt = [prefix, firstPrompt, suffix].filter(Boolean).join(' ');
+            promptPreviewTextEl.textContent = fullPrompt;
+            promptPreviewEl.classList.remove('hidden');
+        };
+
+        // Image Count Estimator
+        const updateImageCount = () => {
+            const prompts = promptsEl.value.split('\n').filter(p => p.trim() !== '');
+            const selectedPresetKey = servicePresetEl.value;
+            let imagesPerPrompt = 1;
+
+            if (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4' || selectedPresetKey === 'google-imagen3-apikey') {
+                imagesPerPrompt = parseInt(numberOfImagesEl.value, 10) || 1;
+            }
+
+            const totalImages = prompts.length * imagesPerPrompt;
+            imageCountEl.textContent = `${totalImages} image${totalImages !== 1 ? 's' : ''}`;
+        };
 
         // --- Helper Functions ---
         const fileToBase64 = (file, convertAlphaToWhite = false) => {
@@ -520,12 +601,12 @@ A cozy library in a treehouse during a gentle rain</textarea>
             progressBarEl.style.width = `${percentage}%`;
         };
         
-        const renderImageCard = ({ filename, base64Data, error, aspectRatio = '1:1' }) => {
+        const renderImageCard = ({ filename, base64Data, error, aspectRatio = '1:1', prompt = '' }) => {
             const card = document.createElement('div');
-            card.className = 'bg-gray-800 rounded-md overflow-hidden shadow-md flex flex-col hover:shadow-lg transition-shadow';
+            card.className = 'bg-gray-800 rounded-md overflow-hidden shadow-md flex flex-col hover:shadow-lg transition-shadow group relative';
 
             const imageContainer = document.createElement('div');
-            imageContainer.className = 'w-full bg-gray-700 flex items-center justify-center';
+            imageContainer.className = 'w-full bg-gray-700 flex items-center justify-center relative';
             // Dynamically set the aspect ratio for the container
             imageContainer.style.aspectRatio = aspectRatio.replace(':', ' / ');
 
@@ -541,6 +622,48 @@ A cozy library in a treehouse during a gentle rain</textarea>
                     win.document.write(`<img src="${img.src}" style="max-width:100%;height:auto"/>`);
                 };
                 imageContainer.appendChild(img);
+
+                // Action buttons overlay
+                const actionsOverlay = document.createElement('div');
+                actionsOverlay.className = 'absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2';
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.innerHTML = '⬇';
+                downloadBtn.className = 'px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-white text-xs';
+                downloadBtn.title = 'Download';
+                downloadBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const link = document.createElement('a');
+                    link.href = img.src;
+                    link.download = filename;
+                    link.click();
+                };
+
+                const copyBtn = document.createElement('button');
+                copyBtn.innerHTML = '📋';
+                copyBtn.className = 'px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs';
+                copyBtn.title = 'Copy prompt';
+                copyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(prompt).then(() => {
+                        copyBtn.innerHTML = '✓';
+                        setTimeout(() => copyBtn.innerHTML = '📋', 1000);
+                    });
+                };
+
+                actionsOverlay.appendChild(downloadBtn);
+                actionsOverlay.appendChild(copyBtn);
+                imageContainer.appendChild(actionsOverlay);
+
+                // Prompt tooltip
+                if (prompt) {
+                    const promptTooltip = document.createElement('div');
+                    promptTooltip.className = 'absolute bottom-0 left-0 right-0 bg-black/80 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition-opacity';
+                    promptTooltip.textContent = prompt;
+                    promptTooltip.style.maxHeight = '3em';
+                    promptTooltip.style.overflow = 'hidden';
+                    imageContainer.appendChild(promptTooltip);
+                }
             }
 
             const nameEl = document.createElement('p');
@@ -557,15 +680,18 @@ A cozy library in a treehouse during a gentle rain</textarea>
             const selectedValue = servicePresetEl.value;
 
             apiKeyHelpTextEl.style.display = 'none';
-            advancedImageSettingsEl.style.display = 'none';
             poeReferenceImageSectionEl.style.display = 'none';
 
-            if (selectedValue === 'google-imagen3-apikey' || selectedValue === 'poe-imagen4' || selectedValue === 'poe-seedream4') {
+            // Show/hide aspect ratio and number of images based on service
+            const supportsAdvanced = selectedValue === 'google-imagen3-apikey' || selectedValue === 'poe-imagen4' || selectedValue === 'poe-seedream4';
+            aspectRatioContainerEl.style.display = supportsAdvanced ? 'block' : 'none';
+            numberOfImagesContainerEl.style.display = supportsAdvanced ? 'block' : 'none';
+
+            if (supportsAdvanced) {
                 apiKeyEl.placeholder = "Enter your API Key";
                 if (selectedValue === 'google-imagen3-apikey') {
                     apiKeyHelpTextEl.style.display = 'block';
                 }
-                advancedImageSettingsEl.style.display = 'block';
                 // Only show reference image section for Seedream-4.0
                 if (selectedValue === 'poe-seedream4') {
                     poeReferenceImageSectionEl.style.display = 'block';
@@ -573,6 +699,8 @@ A cozy library in a treehouse during a gentle rain</textarea>
             } else {
                 apiKeyEl.placeholder = "Enter your API key";
             }
+
+            updateImageCount();
         };
 
         // --- Core Logic ---
@@ -725,7 +853,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
                                      } else {
                                          filename = `${baseFilename}_${contentHash}.png`;
                                      }
-                                    const imageData = { filename, base64Data: base64 };
+                                    const imageData = { filename, base64Data: base64, prompt: fullPrompt };
                                     generatedImages.push(imageData);
                                     renderImageCard({ ...imageData, aspectRatio: currentAspectRatio });
                                 }
@@ -831,10 +959,29 @@ A cozy library in a treehouse during a gentle rain</textarea>
         };
 
         // --- Event Listeners ---
-        startButton.addEventListener('click', startGeneration);
+        startButton.addEventListener('click', () => {
+            saveApiKey();
+            startGeneration();
+        });
         stopButton.addEventListener('click', () => { isGenerating = false; });
         downloadButton.addEventListener('click', downloadZip);
         servicePresetEl.addEventListener('change', updateAuthUI);
+
+        // API Key management
+        clearApiKeyEl.addEventListener('click', () => {
+            apiKeyEl.value = '';
+            saveApiKeyEl.checked = false;
+            localStorage.removeItem('apiKey');
+        });
+
+        // Prompt preview and image count updates
+        promptsEl.addEventListener('input', () => {
+            updatePromptPreview();
+            updateImageCount();
+        });
+        promptPrefixEl.addEventListener('input', updatePromptPreview);
+        promptSuffixEl.addEventListener('input', updatePromptPreview);
+        numberOfImagesEl.addEventListener('input', updateImageCount);
 
         // Reference image handlers
         referenceImageDropZoneEl.addEventListener('click', () => referenceImageEl.click());
@@ -915,8 +1062,11 @@ A cozy library in a treehouse during a gentle rain</textarea>
 
         // --- Initial UI Setup ---
         document.addEventListener('DOMContentLoaded', () => {
+            loadApiKey();
             loadUrlParameters();
             updateAuthUI();
+            updatePromptPreview();
+            updateImageCount();
         });
     </script>
 </body>

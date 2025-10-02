@@ -389,9 +389,16 @@ A cozy library in a treehouse during a gentle rain</textarea>
             }
             const prefix = promptPrefixEl.value.trim();
             const suffix = promptSuffixEl.value.trim();
+            const negative = negativePromptEl.value.trim();
             const firstPrompt = prompts[0];
             const fullPrompt = [prefix, firstPrompt, suffix].filter(Boolean).join(' ');
-            promptPreviewTextEl.textContent = fullPrompt;
+
+            let previewText = fullPrompt;
+            if (negative) {
+                previewText += ` | Negative: ${negative}`;
+            }
+
+            promptPreviewTextEl.textContent = previewText;
             promptPreviewEl.classList.remove('hidden');
         };
 
@@ -980,6 +987,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
         });
         promptPrefixEl.addEventListener('input', updatePromptPreview);
         promptSuffixEl.addEventListener('input', updatePromptPreview);
+        negativePromptEl.addEventListener('input', updatePromptPreview);
         numberOfImagesEl.addEventListener('input', updateImageCount);
 
         // Reference image handlers

@@ -101,9 +101,14 @@ A cozy library in a treehouse during a gentle rain</textarea>
                             <label for="apiKey" class="block text-sm font-medium text-gray-300">API Key</label>
                             <input type="password" id="apiKey" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="Enter your API key">
                             <p id="apiKeyHelpText" class="mt-2 text-xs text-gray-400" style="display: none;">
-                                To use this, you need a Google Cloud API Key. 
+                                To use this, you need a Google Cloud API Key.
                                 <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 hover:underline">Create one here</a>.
                             </p>
+                        </div>
+                        <div>
+                            <label for="proxyUrl" class="block text-sm font-medium text-gray-300">CORS Proxy URL (Optional)</label>
+                            <input type="text" id="proxyUrl" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="https://corsproxy.io/?">
+                            <p class="mt-2 text-xs text-gray-400">Used to fetch images from URLs. Default: https://corsproxy.io/?</p>
                         </div>
                     </div>
                 </div>
@@ -264,6 +269,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
         const servicePresetEl = document.getElementById('servicePreset');
         const apiKeyEl = document.getElementById('apiKey');
         const apiKeyHelpTextEl = document.getElementById('apiKeyHelpText');
+        const proxyUrlEl = document.getElementById('proxyUrl');
         const startButton = document.getElementById('startButton');
         const stopButton = document.getElementById('stopButton');
         const downloadButton = document.getElementById('downloadButton');
@@ -432,7 +438,8 @@ A cozy library in a treehouse during a gentle rain</textarea>
             // It uses a CORS proxy to bypass browser security restrictions.
             return new Promise(async (resolve, reject) => {
                 try {
-                    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+                    const proxyBase = proxyUrlEl.value.trim() || 'https://corsproxy.io/?';
+                    const proxyUrl = `${proxyBase}${encodeURIComponent(url)}`;
                     const response = await fetch(proxyUrl);
                     if (!response.ok) {
                         throw new Error(`Failed to fetch image via proxy: ${response.status} ${response.statusText}`);
@@ -838,8 +845,28 @@ A cozy library in a treehouse during a gentle rain</textarea>
             }
         });
 
+        // --- URL Parameter Pre-population ---
+        const loadUrlParameters = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // Pre-populate API key if provided
+            const apiKeyParam = urlParams.get('apiKey') || urlParams.get('apikey') || urlParams.get('key');
+            if (apiKeyParam) {
+                apiKeyEl.value = apiKeyParam;
+            }
+
+            // Pre-populate proxy URL if provided
+            const proxyParam = urlParams.get('proxy') || urlParams.get('proxyUrl');
+            if (proxyParam) {
+                proxyUrlEl.value = proxyParam;
+            }
+        };
+
         // --- Initial UI Setup ---
-        document.addEventListener('DOMContentLoaded', updateAuthUI);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUrlParameters();
+            updateAuthUI();
+        });
     </script>
 </body>
 </html>

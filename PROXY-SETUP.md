@@ -161,8 +161,15 @@ Example configuration:
 
 ### URL Parameters for Easy Sharing
 
+The application is hosted at: **https://draw.bestboardga.me/**
+
 ```
-file:///path/to/index.html?apiKey=poe-api-key&proxy=http://your-server:8080/?&proxyToken=your-key
+https://draw.bestboardga.me/?apiKey=poe-api-key&proxy=http://your-server:8080/?&proxyToken=your-key
+```
+
+Example with all parameters:
+```
+https://draw.bestboardga.me/?apiKey=eQhrryKWthTcOMpeXmejsNDIJmNy5csGTo5XYKdbaZI&proxy=http://your-server:8080/?&proxyToken=your-proxy-key
 ```
 
 ## Security Recommendations

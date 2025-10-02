@@ -18,140 +18,158 @@
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans antialiased">
 
-    <div class="container mx-auto p-4 lg:p-8">
-        <header class="text-center mb-8">
-            <img src="images/logo_draw.png" alt="Logo" class="mx-auto mb-4 h-16 w-auto">
-            <h1 class="text-4xl font-bold text-white mb-2">Batch Image Generator</h1>
-            <p class="text-gray-400">Generate multiple images from a list of prompts using preset services.</p>
+    <div class="container mx-auto p-4 lg:p-8 max-w-7xl">
+        <header class="text-center mb-6">
+            <img src="images/logo_draw.png" alt="Logo" class="mx-auto mb-3 h-12 w-auto">
+            <h1 class="text-3xl font-bold text-white mb-1">Batch Image Generator</h1>
+            <p class="text-gray-400 text-sm">Generate multiple images from prompts using AI services</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- ========== Configuration Column ========== -->
-            <div class="flex flex-col space-y-6">
+            <div class="lg:col-span-2 flex flex-col space-y-4">
                 <!-- Prompts Section -->
-                <div>
-                    <label for="prompts" class="block text-sm font-medium text-gray-300 mb-2">1. Enter Prompts (one per line)</label>
-                    <textarea id="prompts" rows="8" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-200 placeholder-gray-500" placeholder="A futuristic city at sunset&#10;A robot reading a book in a library&#10;A fantasy landscape with floating islands...">A smiling sloth in a business suit
+                <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                    <label for="prompts" class="block text-sm font-semibold text-white mb-2">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs mr-2">1</span>
+                        Prompts
+                    </label>
+                    <textarea id="prompts" rows="6" class="w-full p-3 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-200 placeholder-gray-500 text-sm" placeholder="Enter one prompt per line...&#10;e.g., A futuristic city at sunset&#10;      A robot reading a book">A smiling sloth in a business suit
 A majestic jellyfish floating in a starry galaxy
 A cozy library in a treehouse during a gentle rain</textarea>
                 </div>
 
                 <!-- API Configuration Section -->
-                <div>
-                    <h2 class="text-lg font-semibold text-white mb-3">2. Service Configuration</h2>
-                    <div class="space-y-4 bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="promptPrefix" class="block text-sm font-medium text-gray-300">Prompt Prefix</label>
-                                <input type="text" id="promptPrefix" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="e.g., photo of">
-                            </div>
-                            <div>
-                                <label for="promptSuffix" class="block text-sm font-medium text-gray-300">Prompt Suffix</label>
-                                <input type="text" id="promptSuffix" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="e.g., 4k, detailed">
-                            </div>
-                        </div>
+                <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                    <h2 class="text-sm font-semibold text-white mb-3">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs mr-2">2</span>
+                        Service Configuration
+                    </h2>
+                    <div class="space-y-3">
                         <div>
-                            <label for="servicePreset" class="block text-sm font-medium text-gray-300">Image Generation Service</label>
-                            <select id="servicePreset" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="poe-seedream4" selected>Poe - Seedream-4.0 (API Key)</option>
-                                <option value="poe-imagen4">Poe - Imagen 4 (API Key)</option>
-                                <option value="google-imagen3-apikey">Google - Imagen 3 (API Key)</option>
+                            <label for="servicePreset" class="block text-xs font-medium text-gray-300 mb-1">Service</label>
+                            <select id="servicePreset" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                <option value="poe-seedream4" selected>Poe - Seedream-4.0</option>
+                                <option value="poe-imagen4">Poe - Imagen 4</option>
+                                <option value="google-imagen3-apikey">Google - Imagen 3</option>
                                 <option value="openai-dalle3">OpenAI - DALL-E 3</option>
                             </select>
                         </div>
 
+                        <div>
+                            <label for="apiKey" class="block text-xs font-medium text-gray-300 mb-1">API Key</label>
+                            <input type="password" id="apiKey" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="Enter your API key">
+                            <p id="apiKeyHelpText" class="mt-1 text-xs text-gray-400" style="display: none;">
+                                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 hover:underline">Get API key →</a>
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="promptPrefix" class="block text-xs font-medium text-gray-300 mb-1">Prefix (optional)</label>
+                                <input type="text" id="promptPrefix" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-sm focus:ring-2 focus:ring-indigo-500" placeholder="e.g., photo of">
+                            </div>
+                            <div>
+                                <label for="promptSuffix" class="block text-xs font-medium text-gray-300 mb-1">Suffix (optional)</label>
+                                <input type="text" id="promptSuffix" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-sm focus:ring-2 focus:ring-indigo-500" placeholder="e.g., 4k, detailed">
+                            </div>
+                        </div>
+
                         <!-- Advanced Settings -->
-                        <div id="advancedImageSettings" class="space-y-4 p-3 bg-gray-900/50 rounded-md border border-gray-600" style="display: none;">
-                            <h4 class="text-sm font-semibold text-gray-300">Advanced Settings</h4>
-                            <div class="grid grid-cols-2 gap-4">
+                        <div id="advancedImageSettings" class="space-y-3 p-3 bg-gray-900/50 rounded-md border border-gray-600" style="display: none;">
+                            <h4 class="text-xs font-semibold text-gray-300 mb-2">Advanced</h4>
+                            <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label for="aspectRatio" class="block text-xs font-medium text-gray-400">Aspect Ratio</label>
-                                    <select id="aspectRatio" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-sm">
+                                    <label for="aspectRatio" class="block text-xs font-medium text-gray-400 mb-1">Aspect Ratio</label>
+                                    <select id="aspectRatio" class="w-full p-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500">
                                         <option value="default">Default</option>
-                                        <option value="1:1">1:1 (Square)</option>
-                                        <option value="16:9">16:9 (Widescreen)</option>
-                                        <option value="9:16">9:16 (Vertical)</option>
-                                        <option value="4:3">4:3 (Standard)</option>
-                                        <option value="3:4">3:4 (Portrait)</option>
+                                        <option value="1:1">1:1 Square</option>
+                                        <option value="16:9">16:9 Wide</option>
+                                        <option value="9:16">9:16 Vertical</option>
+                                        <option value="4:3">4:3 Standard</option>
+                                        <option value="3:4">3:4 Portrait</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label for="numberOfImages" class="block text-xs font-medium text-gray-400">Number of Images</label>
-                                    <input type="number" id="numberOfImages" value="1" min="1" max="8" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-sm">
+                                    <label for="numberOfImages" class="block text-xs font-medium text-gray-400 mb-1">Images per Prompt</label>
+                                    <input type="number" id="numberOfImages" value="1" min="1" max="8" class="w-full p-2 bg-gray-800 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500">
                                 </div>
                             </div>
                             <div id="poeReferenceImageSection" style="display: none;">
-                                <label for="referenceImage" class="block text-xs font-medium text-gray-400">Reference Image (Optional)</label>
-                                <div id="referenceImageDropZone" class="mt-1 w-full p-4 bg-gray-700 border-2 border-dashed border-gray-600 rounded-md text-center cursor-pointer hover:border-indigo-500 hover:bg-gray-600 transition-colors">
+                                <label for="referenceImage" class="block text-xs font-medium text-gray-400 mb-1">Reference Image</label>
+                                <div id="referenceImageDropZone" class="w-full p-3 bg-gray-800 border-2 border-dashed border-gray-600 rounded-md text-center cursor-pointer hover:border-indigo-500 hover:bg-gray-700 transition-colors">
                                     <div id="referenceImagePreview" class="hidden mb-2">
                                         <div id="referenceImagePreviewContainer" class="flex flex-wrap gap-2 justify-center mb-2"></div>
-                                        <button id="removeReferenceImage" class="mt-2 px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Remove All</button>
+                                        <button id="removeReferenceImage" class="mt-1 px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Remove All</button>
                                     </div>
                                     <div id="referenceImagePlaceholder">
-                                        <svg class="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <svg class="mx-auto h-8 w-8 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
-                                        <p class="mt-2 text-xs text-gray-400">Click to upload, drag & drop, or paste (Ctrl/Cmd+V)</p>
-                                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF up to 10MB (can add multiple)</p>
+                                        <p class="mt-1 text-xs text-gray-400">Click, drag, or paste image</p>
+                                        <p class="text-xs text-gray-500">PNG, JPG, GIF (max 10MB)</p>
                                     </div>
                                 </div>
                                 <input type="file" id="referenceImage" accept="image/*" multiple class="hidden">
                             </div>
                         </div>
 
-                        <div>
-                            <label for="apiKey" class="block text-sm font-medium text-gray-300">API Key</label>
-                            <input type="password" id="apiKey" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="Enter your API key">
-                            <p id="apiKeyHelpText" class="mt-2 text-xs text-gray-400" style="display: none;">
-                                To use this, you need a Google Cloud API Key.
-                                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 hover:underline">Create one here</a>.
-                            </p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="proxyUrl" class="block text-sm font-medium text-gray-300">CORS Proxy URL (Optional)</label>
-                                <input type="text" id="proxyUrl" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="https://corsproxy.io/?">
-                                <p class="mt-2 text-xs text-gray-400">Used to fetch images from URLs. Default: https://corsproxy.io/?</p>
+                        <!-- Proxy Settings (Collapsible) -->
+                        <details class="group">
+                            <summary class="cursor-pointer text-xs text-gray-400 hover:text-gray-300 select-none">⚙️ Proxy Settings</summary>
+                            <div class="mt-2 grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="proxyUrl" class="block text-xs font-medium text-gray-400 mb-1">Proxy URL</label>
+                                    <input type="text" id="proxyUrl" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500" placeholder="https://corsproxy.io/?">
+                                </div>
+                                <div>
+                                    <label for="proxyToken" class="block text-xs font-medium text-gray-400 mb-1">Proxy Token</label>
+                                    <input type="password" id="proxyToken" class="w-full p-2 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-xs focus:ring-2 focus:ring-indigo-500" placeholder="Optional token">
+                                </div>
                             </div>
-                            <div>
-                                <label for="proxyToken" class="block text-sm font-medium text-gray-300">Proxy Token (Optional)</label>
-                                <input type="password" id="proxyToken" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="Token for authenticated proxy">
-                                <p class="mt-2 text-xs text-gray-400">Required if your proxy uses authentication</p>
-                            </div>
-                        </div>
+                        </details>
                     </div>
                 </div>
 
-                <!-- Controls -->
-                <div>
-                     <h2 class="text-lg font-semibold text-white mb-3">3. Generate & Download</h2>
-                    <div class="flex items-center space-x-4">
-                        <button id="startButton" class="w-full px-6 py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-900 transition duration-150">Start Generation</button>
-                        <button id="stopButton" class="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-md shadow-md hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition duration-150" disabled>Stop</button>
+                <!-- Controls & Progress -->
+                <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                    <h2 class="text-sm font-semibold text-white mb-3">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs mr-2">3</span>
+                        Generate
+                    </h2>
+                    <div class="flex gap-3 mb-3">
+                        <button id="startButton" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm">
+                            ▶ Start
+                        </button>
+                        <button id="stopButton" class="px-4 py-2.5 bg-red-600/80 text-white font-semibold rounded-md shadow-md hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-500 transition text-sm" disabled>
+                            ■ Stop
+                        </button>
                     </div>
-                </div>
-                
-                <!-- Progress -->
-                <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                    <div id="status" class="text-gray-400 text-sm">Status: Idle</div>
-                    <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
-                        <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div class="space-y-2">
+                        <div id="status" class="text-gray-400 text-xs">Idle</div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                            <div id="progressBar" class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- ========== Output Column ========== -->
-            <div class="flex flex-col">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-white">Results</h2>
-                    <button id="downloadButton" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition duration-150" disabled>Download All as .zip</button>
-                </div>
-                <div id="resultsGrid" class="flex-grow bg-gray-800/50 border border-gray-700 rounded-lg p-4 h-96 lg:h-auto overflow-y-auto">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4">
-                        <!-- Generated images will appear here -->
+            <!-- ========== Results Column ========== -->
+            <div class="lg:col-span-1 flex flex-col">
+                <div class="bg-gray-800/50 border border-gray-700 rounded-lg flex flex-col h-full">
+                    <div class="flex justify-between items-center p-3 border-b border-gray-700">
+                        <h2 class="text-sm font-semibold text-white">Results</h2>
+                        <button id="downloadButton" class="px-3 py-1.5 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-500 transition text-xs" disabled>
+                            ⬇ Download ZIP
+                        </button>
                     </div>
-                     <div id="placeholder" class="flex items-center justify-center h-full">
-                        <p class="text-gray-500">Your generated images will appear here.</p>
+                    <div id="resultsGrid" class="flex-grow p-3 overflow-y-auto min-h-[400px] lg:min-h-0">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Generated images will appear here -->
+                        </div>
+                        <div id="placeholder" class="flex items-center justify-center h-full">
+                            <p class="text-gray-500 text-sm text-center">Generated images<br/>will appear here</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -498,14 +516,14 @@ A cozy library in a treehouse during a gentle rain</textarea>
         };
 
         const updateProgress = (text, percentage) => {
-            statusEl.textContent = `Status: ${text}`;
+            statusEl.textContent = text;
             progressBarEl.style.width = `${percentage}%`;
         };
         
         const renderImageCard = ({ filename, base64Data, error, aspectRatio = '1:1' }) => {
             const card = document.createElement('div');
-            card.className = 'bg-gray-800 rounded-lg overflow-hidden shadow-lg flex flex-col';
-            
+            card.className = 'bg-gray-800 rounded-md overflow-hidden shadow-md flex flex-col hover:shadow-lg transition-shadow';
+
             const imageContainer = document.createElement('div');
             imageContainer.className = 'w-full bg-gray-700 flex items-center justify-center';
             // Dynamically set the aspect ratio for the container
@@ -517,13 +535,18 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 const img = document.createElement('img');
                 img.src = `data:image/png;base64,${base64Data}`;
                 img.alt = filename;
-                img.className = 'w-full h-full object-cover';
+                img.className = 'w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity';
+                img.onclick = () => {
+                    const win = window.open();
+                    win.document.write(`<img src="${img.src}" style="max-width:100%;height:auto"/>`);
+                };
                 imageContainer.appendChild(img);
             }
-            
+
             const nameEl = document.createElement('p');
             nameEl.textContent = filename;
-            nameEl.className = 'p-2 text-xs text-center text-gray-400 bg-gray-900 truncate';
+            nameEl.title = filename;
+            nameEl.className = 'px-2 py-1.5 text-xs text-center text-gray-400 bg-gray-900 truncate';
 
             card.appendChild(imageContainer);
             card.appendChild(nameEl);

@@ -105,10 +105,17 @@ A cozy library in a treehouse during a gentle rain</textarea>
                                 <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 hover:underline">Create one here</a>.
                             </p>
                         </div>
-                        <div>
-                            <label for="proxyUrl" class="block text-sm font-medium text-gray-300">CORS Proxy URL (Optional)</label>
-                            <input type="text" id="proxyUrl" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="https://corsproxy.io/?">
-                            <p class="mt-2 text-xs text-gray-400">Used to fetch images from URLs. Default: https://corsproxy.io/?</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="proxyUrl" class="block text-sm font-medium text-gray-300">CORS Proxy URL (Optional)</label>
+                                <input type="text" id="proxyUrl" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="https://corsproxy.io/?">
+                                <p class="mt-2 text-xs text-gray-400">Used to fetch images from URLs. Default: https://corsproxy.io/?</p>
+                            </div>
+                            <div>
+                                <label for="proxyToken" class="block text-sm font-medium text-gray-300">Proxy Token (Optional)</label>
+                                <input type="password" id="proxyToken" class="mt-1 w-full p-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm" placeholder="Token for authenticated proxy">
+                                <p class="mt-2 text-xs text-gray-400">Required if your proxy uses authentication</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -270,6 +277,7 @@ A cozy library in a treehouse during a gentle rain</textarea>
         const apiKeyEl = document.getElementById('apiKey');
         const apiKeyHelpTextEl = document.getElementById('apiKeyHelpText');
         const proxyUrlEl = document.getElementById('proxyUrl');
+        const proxyTokenEl = document.getElementById('proxyToken');
         const startButton = document.getElementById('startButton');
         const stopButton = document.getElementById('stopButton');
         const downloadButton = document.getElementById('downloadButton');
@@ -439,8 +447,20 @@ A cozy library in a treehouse during a gentle rain</textarea>
             return new Promise(async (resolve, reject) => {
                 try {
                     const proxyBase = proxyUrlEl.value.trim() || 'https://corsproxy.io/?';
-                    const proxyUrl = `${proxyBase}${encodeURIComponent(url)}`;
-                    const response = await fetch(proxyUrl);
+                    const proxyToken = proxyTokenEl.value.trim();
+
+                    let proxyUrl = `${proxyBase}${encodeURIComponent(url)}`;
+                    const fetchOptions = {};
+
+                    // Add token if provided
+                    if (proxyToken) {
+                        // Check if proxy URL already has query parameters
+                        const separator = proxyBase.includes('?') ? '&' : '?';
+                        // Insert token before the encoded URL
+                        proxyUrl = `${proxyBase}${separator}token=${encodeURIComponent(proxyToken)}&${encodeURIComponent(url)}`;
+                    }
+
+                    const response = await fetch(proxyUrl, fetchOptions);
                     if (!response.ok) {
                         throw new Error(`Failed to fetch image via proxy: ${response.status} ${response.statusText}`);
                     }
@@ -859,6 +879,12 @@ A cozy library in a treehouse during a gentle rain</textarea>
             const proxyParam = urlParams.get('proxy') || urlParams.get('proxyUrl');
             if (proxyParam) {
                 proxyUrlEl.value = proxyParam;
+            }
+
+            // Pre-populate proxy token if provided
+            const proxyTokenParam = urlParams.get('proxyToken') || urlParams.get('proxytoken') || urlParams.get('token');
+            if (proxyTokenParam) {
+                proxyTokenEl.value = proxyTokenParam;
             }
         };
 

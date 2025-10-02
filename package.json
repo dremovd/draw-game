@@ -1,0 +1,16 @@
+{
+  "name": "cors-proxy-server",
+  "version": "1.0.0",
+  "description": "Authenticated CORS proxy server for image generation",
+  "main": "cors-proxy-server.js",
+  "scripts": {
+    "start": "node cors-proxy-server.js",
+    "dev": "node cors-proxy-server.js"
+  },
+  "keywords": ["cors", "proxy", "authentication"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors-anywhere": "^0.4.4"
+  }
+}

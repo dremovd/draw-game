@@ -137,16 +137,21 @@ const server = http.createServer((req, res) => {
         hostname.startsWith('172.16.') ||
         hostname.startsWith('[::1]') ||
         hostname === '0.0.0.0') {
+        console.log(`[BLOCKED] Internal/private address: ${hostname}`);
         res.writeHead(403, {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
         });
         res.end(JSON.stringify({
             error: 'Forbidden',
-            message: 'Cannot proxy to internal/private addresses'
+            message: 'Cannot proxy to internal/private addresses',
+            hostname: hostname
         }));
         return;
     }
+
+    // Log the request
+    console.log(`[PROXY] ${parsedTarget.hostname} - ${parsedTarget.pathname}`);
 
     // Prepare proxy request
     const protocol = parsedTarget.protocol === 'https:' ? https : http;
@@ -182,7 +187,7 @@ const server = http.createServer((req, res) => {
     });
 
     proxyReq.on('error', (err) => {
-        console.error('Proxy request error:', err.message);
+        console.error(`[ERROR] ${parsedTarget.hostname} - ${err.message}`);
         if (!res.headersSent) {
             res.writeHead(502, {
                 'Content-Type': 'application/json',
@@ -190,7 +195,8 @@ const server = http.createServer((req, res) => {
             });
             res.end(JSON.stringify({
                 error: 'Bad Gateway',
-                message: 'Failed to fetch from target URL'
+                message: 'Failed to fetch from target URL',
+                details: err.message
             }));
         }
     });

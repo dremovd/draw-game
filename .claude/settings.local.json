@@ -1,10 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(Negative: negative prompt\"\n- Updates in real-time as user types\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(chmod:*)",
+      "Bash(if [ -f /Users/dmitry/projects/draw-game/.gitignore ])",
+      "Bash(then cat /Users/dmitry/projects/draw-game/.gitignore)",
+      "Bash(else echo \"No .gitignore found\")",
+      "Bash(fi)"
     ],
     "deny": [],
     "ask": []

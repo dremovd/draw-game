@@ -15,18 +15,40 @@ This proxy is built with security in mind using native Node.js modules (no vulne
 
 ## Quick Start (Local Testing)
 
-1. **No dependencies needed!** The server uses only Node.js built-ins.
+### Option 1: Using the helper script (Recommended)
+
+1. **Run the script** - It will create a `.env` file if needed:
    ```bash
-   # Optionally run this to clean up old vulnerable packages
-   rm -rf node_modules package-lock.json
+   ./proxy_run.sh
    ```
+
+2. **Configure** - Edit the `.env` file that was created:
+   ```bash
+   nano .env
+   ```
+
+   Set your API key (generate with the command shown below).
+
+3. **Run again:**
+   ```bash
+   ./proxy_run.sh
+   ```
+
+4. **Test it:**
+   ```bash
+   curl "http://localhost:8080/?token=your-api-key&https://httpbin.org/json"
+   ```
+
+### Option 2: Manual startup
+
+1. **No dependencies needed!** The server uses only Node.js built-ins.
 
 2. **Run the server:**
    ```bash
-   # Use default key
-   npm start
+   # Set environment variables directly
+   API_KEY=your-secret-key-here node cors-proxy-server.js
 
-   # Or set custom key
+   # Or use npm script
    API_KEY=your-secret-key-here npm start
    ```
 
@@ -56,37 +78,77 @@ npm --version
 mkdir -p ~/cors-proxy
 cd ~/cors-proxy
 
-# Copy the files (or clone your repo)
-# You need: cors-proxy-server.js and package.json
+# Clone your repo or copy files
+# You need: cors-proxy-server.js, proxy_run.sh, .env.example
 
 # No dependencies needed - uses only Node.js built-ins!
 ```
 
-### 3. Generate Secure API Key
+### 3. Configure with .env file
 
 ```bash
-# Generate a random secure key
+# Copy the example file
+cp .env.example .env
+
+# Generate a secure API key
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+# Edit .env and paste your generated key
+nano .env
 ```
 
-Save this key - you'll need it for both server and client configuration.
+Edit the `.env` file:
+```bash
+API_KEY=your-generated-key-here-paste-the-output-from-above
+HOST=0.0.0.0
+PORT=8080
+# ALLOWED_DOMAINS=api.poe.com,generativelanguage.googleapis.com
+```
 
 ### 4. Test the Server
 
 ```bash
-# Run with your key
-API_KEY=your-generated-key-here node cors-proxy-server.js
+# Make script executable
+chmod +x proxy_run.sh
+
+# Run the server
+./proxy_run.sh
 ```
 
-Visit: `http://your-server-ip:8080/?token=your-generated-key-here&https://httpbin.org/json`
+Visit: `http://your-server-ip:8080/?token=your-api-key&https://httpbin.org/json`
 
 ### 5. Set Up as Systemd Service
 
+**Option A: Using .env file (Recommended)**
+
 ```bash
-# Create service file
+# Create service file that uses .env
 sudo tee /etc/systemd/system/cors-proxy.service > /dev/null << EOF
 [Unit]
-Description=Authenticated CORS Proxy Server
+Description=Secure CORS Proxy Server
+After=network.target
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$HOME/cors-proxy
+EnvironmentFile=$HOME/cors-proxy/.env
+ExecStart=/usr/bin/node cors-proxy-server.js
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+**Option B: Inline environment variables**
+
+```bash
+# Create service file with inline variables
+sudo tee /etc/systemd/system/cors-proxy.service > /dev/null << EOF
+[Unit]
+Description=Secure CORS Proxy Server
 After=network.target
 
 [Service]
@@ -96,6 +158,7 @@ WorkingDirectory=$HOME/cors-proxy
 Environment="API_KEY=your-generated-key-here"
 Environment="PORT=8080"
 Environment="HOST=0.0.0.0"
+# Environment="ALLOWED_DOMAINS=api.poe.com,generativelanguage.googleapis.com"
 ExecStart=/usr/bin/node cors-proxy-server.js
 Restart=always
 RestartSec=10
@@ -103,6 +166,13 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 EOF
+```
+
+**Enable and start the service:**
+
+```bash
+# Reload systemd
+sudo systemctl daemon-reload
 
 # Enable and start service
 sudo systemctl enable cors-proxy

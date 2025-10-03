@@ -542,18 +542,24 @@ A cozy library in a treehouse during a gentle rain</textarea>
             // It uses a CORS proxy to bypass browser security restrictions.
             return new Promise(async (resolve, reject) => {
                 try {
-                    const proxyBase = proxyUrlEl.value.trim() || 'https://corsproxy.io/?';
+                    let proxyBase = proxyUrlEl.value.trim() || 'https://corsproxy.io/?';
                     const proxyToken = proxyTokenEl.value.trim();
 
-                    let proxyUrl = `${proxyBase}${encodeURIComponent(url)}`;
+                    // Clean up proxy base URL - remove trailing ? or ?&
+                    proxyBase = proxyBase.replace(/\?&?$/, '');
+
+                    let proxyUrl;
                     const fetchOptions = {};
 
                     // Add token if provided
                     if (proxyToken) {
-                        // Check if proxy URL already has query parameters
+                        // Build URL: proxyBase?token=TOKEN&TARGET_URL or proxyBase&token=TOKEN&TARGET_URL
                         const separator = proxyBase.includes('?') ? '&' : '?';
-                        // Insert token before the encoded URL
                         proxyUrl = `${proxyBase}${separator}token=${encodeURIComponent(proxyToken)}&${encodeURIComponent(url)}`;
+                    } else {
+                        // No token: just append the encoded URL
+                        const separator = proxyBase.includes('?') ? '&' : '?';
+                        proxyUrl = `${proxyBase}${separator}${encodeURIComponent(url)}`;
                     }
 
                     const response = await fetch(proxyUrl, fetchOptions);

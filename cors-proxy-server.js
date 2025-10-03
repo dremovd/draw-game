@@ -48,21 +48,37 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Extract target URL
-    let targetUrl = requestUrl.pathname.substring(1); // Remove leading /
+    // Extract target URL - support multiple formats
+    let targetUrl = null;
 
-    // Handle both formats: /url and /?url
+    // Format 1: Path-based /https://example.com
+    if (requestUrl.pathname.length > 1) {
+        targetUrl = requestUrl.pathname.substring(1); // Remove leading /
+    }
+
+    // Format 2: Query parameter ?url=https://example.com
     if (!targetUrl && requestUrl.searchParams.has('url')) {
         targetUrl = requestUrl.searchParams.get('url');
     }
 
-    // If still no URL, try the query string after removing token
+    // Format 3: URL after token in query string (?token=KEY&URL)
+    // The URL gets added as a parameter without a key, so we need to find it
     if (!targetUrl) {
-        requestUrl.searchParams.delete('token');
-        requestUrl.searchParams.delete('key');
-        const remainingParams = requestUrl.search.substring(1);
-        if (remainingParams && remainingParams.startsWith('http')) {
-            targetUrl = remainingParams;
+        for (const [key, value] of requestUrl.searchParams.entries()) {
+            // Skip known parameters
+            if (key === 'token' || key === 'key') continue;
+
+            // Check if the key itself is a URL (happens when no value is provided)
+            if (key.startsWith('http://') || key.startsWith('https://')) {
+                targetUrl = key;
+                break;
+            }
+
+            // Or if the value is a URL
+            if (value && (value.startsWith('http://') || value.startsWith('https://'))) {
+                targetUrl = value;
+                break;
+            }
         }
     }
 
@@ -73,7 +89,8 @@ const server = http.createServer((req, res) => {
         });
         res.end(JSON.stringify({
             error: 'Bad Request',
-            message: 'Valid target URL required. Usage: /?token=KEY&https://example.com/resource'
+            message: 'Valid target URL required. Formats: /?token=KEY&url=TARGET or /TARGET?token=KEY',
+            received_params: Object.fromEntries(requestUrl.searchParams.entries())
         }));
         return;
     }

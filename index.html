@@ -402,7 +402,15 @@ A cozy library in a treehouse during a gentle rain</textarea>
             }
 
             const totalImages = prompts.length * imagesPerPrompt;
-            imageCountEl.textContent = `${totalImages} image${totalImages !== 1 ? 's' : ''}`;
+            const estimatedSeconds = totalImages * 10;
+            const estimatedMinutes = Math.floor(estimatedSeconds / 60);
+            const remainingSeconds = estimatedSeconds % 60;
+            const timeEstimate = estimatedMinutes > 0
+                ? `~${estimatedMinutes}m ${remainingSeconds}s`
+                : `~${estimatedSeconds}s`;
+
+            const warningText = totalImages > 40 ? ' ⚠️' : '';
+            imageCountEl.textContent = `${totalImages} image${totalImages !== 1 ? 's' : ''}${warningText} (${timeEstimate})`;
         };
 
         // --- Helper Functions ---

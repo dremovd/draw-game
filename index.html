@@ -755,7 +755,29 @@ A cozy library in a treehouse during a gentle rain</textarea>
                 alert('Please enter your prompts and provide an API key.');
                 return;
             }
-            
+
+            // Calculate total images and show warning if > 40
+            let totalGenerations = 0;
+            prompts.forEach(p => {
+                totalGenerations += (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4' || selectedPresetKey === 'google-imagen3-apikey') ? advancedParams.numberOfImages : 1;
+            });
+
+            const estimatedSeconds = totalGenerations * 10;
+            const estimatedMinutes = Math.floor(estimatedSeconds / 60);
+            const remainingSeconds = estimatedSeconds % 60;
+            const timeEstimate = estimatedMinutes > 0
+                ? `${estimatedMinutes}m ${remainingSeconds}s`
+                : `${estimatedSeconds}s`;
+
+            if (totalGenerations > 40) {
+                const confirmed = confirm(
+                    `Warning: You are about to generate ${totalGenerations} images.\n` +
+                    `Estimated time: ~${timeEstimate}\n\n` +
+                    `Do you want to continue?`
+                );
+                if (!confirmed) return;
+            }
+
             isGenerating = true;
             startButton.disabled = true;
             stopButton.disabled = false;
@@ -766,10 +788,6 @@ A cozy library in a treehouse during a gentle rain</textarea>
             const now = new Date();
             generationTimestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
 
-            let totalGenerations = 0;
-            prompts.forEach(p => {
-                totalGenerations += (selectedPresetKey === 'poe-imagen4' || selectedPresetKey === 'poe-seedream4' || selectedPresetKey === 'google-imagen3-apikey') ? advancedParams.numberOfImages : 1;
-            });
             let completedGenerations = 0;
 
             for (let i = 0; i < prompts.length; i++) {

@@ -1,16 +1,16 @@
 {
   "name": "cors-proxy-server",
-  "version": "1.0.0",
-  "description": "Authenticated CORS proxy server for image generation",
+  "version": "2.0.0",
+  "description": "Secure authenticated CORS proxy server for image generation",
   "main": "cors-proxy-server.js",
   "scripts": {
     "start": "node cors-proxy-server.js",
     "dev": "node cors-proxy-server.js"
   },
-  "keywords": ["cors", "proxy", "authentication"],
+  "keywords": ["cors", "proxy", "authentication", "secure"],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "cors-anywhere": "^0.4.4"
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

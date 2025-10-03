@@ -1,12 +1,24 @@
 # CORS Proxy Server Setup Guide
 
-This guide explains how to set up an authenticated CORS proxy server on Ubuntu.
+This guide explains how to set up a **secure**, authenticated CORS proxy server on Ubuntu.
+
+## 🔒 Security Features
+
+This proxy is built with security in mind using native Node.js modules (no vulnerable dependencies):
+
+- ✅ **No vulnerabilities** - Uses only Node.js built-in `http` and `https` modules
+- 🔐 **API key authentication** - Prevents unauthorized access
+- 🛡️ **SSRF protection** - Blocks access to internal/private IP addresses
+- 🎯 **Domain whitelist** - Optional restriction to specific domains
+- ⏱️ **Request timeouts** - Prevents hanging connections
+- 🚫 **Cookie blocking** - Removes cookies from proxied requests
 
 ## Quick Start (Local Testing)
 
-1. **Install dependencies:**
+1. **No dependencies needed!** The server uses only Node.js built-ins.
    ```bash
-   npm install
+   # Optionally run this to clean up old vulnerable packages
+   rm -rf node_modules package-lock.json
    ```
 
 2. **Run the server:**
@@ -47,8 +59,7 @@ cd ~/cors-proxy
 # Copy the files (or clone your repo)
 # You need: cors-proxy-server.js and package.json
 
-# Install dependencies
-npm install
+# No dependencies needed - uses only Node.js built-ins!
 ```
 
 ### 3. Generate Secure API Key
@@ -177,8 +188,23 @@ https://draw.bestboardga.me/?apiKey=eQhrryKWthTcOMpeXmejsNDIJmNy5csGTo5XYKdbaZI&
 1. **Use strong API keys:** Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 2. **Use HTTPS:** Set up nginx with SSL certificates (via Let's Encrypt)
 3. **Restrict access:** Use firewall rules to limit which IPs can access the proxy
-4. **Monitor usage:** Check logs regularly with `sudo journalctl -u cors-proxy`
-5. **Rotate keys:** Change API keys periodically
+4. **Enable domain whitelist:** Set `ALLOWED_DOMAINS=api.poe.com,example.com` to restrict target domains
+5. **Monitor usage:** Check logs regularly with `sudo journalctl -u cors-proxy`
+6. **Rotate keys:** Change API keys periodically
+
+### Advanced: Domain Whitelist
+
+To restrict the proxy to only specific domains:
+
+```bash
+# In systemd service or when running
+ALLOWED_DOMAINS="api.poe.com,generativelanguage.googleapis.com" API_KEY=your-key node cors-proxy-server.js
+```
+
+Or in the systemd service file:
+```
+Environment="ALLOWED_DOMAINS=api.poe.com,generativelanguage.googleapis.com"
+```
 
 ## Troubleshooting
 

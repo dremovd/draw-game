@@ -566,14 +566,25 @@ A cozy library in a treehouse during a gentle rain</textarea>
                     if (!response.ok) {
                         throw new Error(`Failed to fetch image via proxy: ${response.status} ${response.statusText}`);
                     }
+
+                    // Check content type
+                    const contentType = response.headers.get('content-type');
+                    console.log(`Proxy response: ${response.status}, Content-Type: ${contentType}`);
+
                     const blob = await response.blob();
+                    console.log(`Blob size: ${blob.size} bytes, type: ${blob.type}`);
+
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         resolve(reader.result.split(',')[1]);
                     };
-                    reader.onerror = reject;
+                    reader.onerror = (err) => {
+                        console.error('FileReader error:', err);
+                        reject(err);
+                    };
                     reader.readAsDataURL(blob);
                 } catch (error) {
+                    console.error('urlToBase64 error:', error);
                     reject(error);
                 }
             });

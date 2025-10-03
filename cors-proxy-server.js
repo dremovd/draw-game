@@ -175,9 +175,12 @@ const server = http.createServer((req, res) => {
             'Access-Control-Expose-Headers': '*'
         };
 
-        // Forward response headers (except cookies)
+        // Forward response headers (except cookies and CORS headers from target)
         Object.keys(proxyRes.headers).forEach(key => {
-            if (key.toLowerCase() !== 'set-cookie') {
+            const lowerKey = key.toLowerCase();
+            // Skip set-cookie and any CORS headers from target server
+            if (lowerKey !== 'set-cookie' &&
+                !lowerKey.startsWith('access-control-')) {
                 headers[key] = proxyRes.headers[key];
             }
         });
